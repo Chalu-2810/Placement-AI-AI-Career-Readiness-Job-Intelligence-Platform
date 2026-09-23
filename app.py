@@ -61,6 +61,8 @@ import json
 import re
 import random
 import datetime
+from dotenv import load_dotenv
+load_dotenv()
 from collections import Counter
 
 from flask import (
