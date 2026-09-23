@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Resume Intelligence — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    <!-- Upload -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-file-arrow-up" style="color:var(--chart-teal)"></i> Resume intelligence</h2>
+        <span class="panel-eyebrow">Upload a PDF to unlock ATS scoring</span>
+      </div>
+      <div class="panel-body">
+        <form method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="upload-area p-5 text-center mb-3" id="dropZone">
+            <i class="fas fa-file-pdf fs-1 mb-3 d-block" style="color:var(--signal-gap)"></i>
+            <h6 class="fw-semibold">Drag &amp; drop your PDF here</h6>
+            <p class="small mb-3">or click to browse</p>
+            <input type="file" name="resume_pdf" id="resumeFile" accept=".pdf" class="d-none" required/>
+            <label for="resumeFile" class="btn-wp btn-wp--secondary">
+              <i class="fas fa-folder-open"></i> Choose PDF file
+            </label>
+            <p class="small mt-2 mb-0" id="fileName">No file chosen</p>
+          </div>
+          <button type="submit" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg">
+            <i class="fas fa-magnifying-glass-chart"></i> Analyze resume
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if ats_result %}
+    <!-- ATS Results -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-chart-pie" style="color:var(--signal-good)"></i> ATS analysis</h2>
+        <span class="readout"><span class="readout-label">ATS score</span><span class="readout-value">{{ resume_score }}<span class="unit">/100</span></span></span>
+      </div>
+      <div class="panel-body">
+        <div class="text-center mb-4">
+          {% if resume_score >= 75 %}
+            <span class="chip chip--good">Excellent resume</span>
+          {% elif resume_score >= 50 %}
+            <span class="chip chip--brass">Good — needs minor improvements</span>
+          {% else %}
+            <span class="chip chip--gap">Needs significant improvements</span>
+          {% endif %}
+        </div>
+
+        <div class="panel-eyebrow mb-2">Score breakdown</div>
+        {#
+          FIX (visual bug caught during redesign): each category's real max
+          is 20 (see utils/resume.py::ats_score) -- the previous template
+          divided by 30, so bars never reached 100% even at a perfect score.
+        #}
+        {% for category, score in ats_result.breakdown.items() %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>{{ category }}</span><strong class="font-mono">{{ score }}/20</strong>
+          </div>
+          <div class="progress"><div class="progress-bar" style="width:{{ (score / 20 * 100)|round }}%"></div></div>
+        </div>
+        {% endfor %}
+
+        <div class="panel-eyebrow mt-4 mb-2">Priority improvements</div>
+        <ul class="ps-3 mb-0" style="font-size:0.88rem">
+          {% for tip in ats_result.suggestions %}<li class="mb-1">{{ tip }}</li>{% endfor %}
+        </ul>
+
+        {% if ats_result.skills_found %}
+        <div class="panel-eyebrow mt-4 mb-2">Skills detected in resume</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for skill in ats_result.skills_found[:20] %}<span class="chip chip--teal">{{ skill }}</span>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mt-4">
+          <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg">
+            <i class="fas fa-gauge-high"></i> Run readiness estimate →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Target-role keyword comparison (Phase 9) -->
+    {% if role_comparison %}
+    {% set rc = role_comparison %}
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-arrows-left-right" style="color:var(--brass)"></i> Resume → {{ rc.role_entry.role }}</h2>
+        <span class="panel-eyebrow">Compared against real job postings</span>
+      </div>
+      <div class="panel-body">
+        <form method="GET" class="row g-2 align-items-end mb-4">
+          <div class="col-md-8">
+            <label class="field-label" for="roleCompareSelect">Compare against a different role</label>
+            <select name="role" id="roleCompareSelect" class="form-select" onchange="this.form.submit()">
+              {% for r in rc.roles %}
+              <option value="{{ r.role }}" {% if r.role == rc.role_entry.role %}selected{% endif %}>
+                {{ r.role }} — {{ r.posting_count }} posting{{ 's' if r.posting_count != 1 }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </form>
+
+        <div class="text-center mb-4">
+          <div class="readout-value lg">
+            {{ rc.match.match_percentage if rc.match.match_percentage is not none else '—' }}<span class="unit">%</span>
+          </div>
+          <span class="panel-eyebrow">Keyword match</span>
+          <p class="small mt-1 mb-0">
+            {{ rc.match.matched_count }} of {{ rc.match.considered_count }} top skills for this role, based on
+            {{ rc.role_entry.posting_count }} analyzed posting{{ 's' if rc.role_entry.posting_count != 1 }}.
+          </p>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="panel-eyebrow mb-2" style="color:var(--signal-good)"><i class="fas fa-check"></i> Strong</div>
+            {% set strong = rc.match.ranked | selectattr('has_skill') | list %}
+            {% if strong %}
+            <div class="d-flex flex-wrap gap-2">
+              {% for s in strong %}<span class="chip chip--good">✓ {{ s.skill|capitalize }}</span>{% endfor %}
+            </div>
+            {% else %}<p class="small mb-0">None of this role's top skills were detected in your resume yet.</p>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <div class="panel-eyebrow mb-2" style="color:var(--signal-gap)"><i class="fas fa-triangle-exclamation"></i> Missing</div>
+            {% if rc.match.priority_skills %}
+            <div class="d-flex flex-wrap gap-2">
+              {% for s in rc.match.priority_skills %}<span class="chip chip--gap">⚠ {{ s.skill|capitalize }}</span>{% endfor %}
+            </div>
+            {% else %}<p class="small mb-0">You cover every top skill identified for this role. 🎉</p>{% endif %}
+          </div>
+        </div>
+
+        <p class="small mt-4 mb-0" style="color:var(--ink-soft)">
+          A transparent keyword-overlap calculation against real RemoteOK postings for this exact role title —
+          not an AI-generated score. See <code>docs/job-market-methodology.md</code>.
+        </p>
+      </div>
+    </div>
+    {% else %}
+    <div class="panel mb-4">
+      <div class="panel-body">
+        <p class="small mb-0">
+          <i class="fas fa-arrows-left-right me-1" style="color:var(--ink-faint)"></i>
+          No target-role comparison available yet — this needs your academic domain set and a job market snapshot
+          with role data. See <a href="{{ url_for('opportunities') }}">Job Market Intelligence</a>.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <!-- Empty state -->
+    <div class="panel">
+      <div class="panel-body">
+        <div class="panel-eyebrow mb-2">Resume tips for ATS</div>
+        <ul class="ps-3 mb-0" style="font-size:0.88rem">
+          <li class="mb-2">Include all key sections: Education, Experience, Projects, Skills</li>
+          <li class="mb-2">Use strong action verbs: Developed, Built, Led, Optimized</li>
+          <li class="mb-2">Keep resume to 1 page for freshers (200–800 words)</li>
+          <li class="mb-2">List technical skills explicitly (Python, SQL, React, etc.)</li>
+          <li class="mb-2">Add your email and phone number</li>
+          <li>Mention certifications and quantified achievements</li>
+        </ul>
+        <div class="flash flash-info mt-3" style="display:flex">
+          <span>Resume upload is <strong>optional</strong> but improves your prediction accuracy.
+          <a href="{{ url_for('predict') }}">Skip and continue →</a></span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('resumeFile').addEventListener('change', function() {
+    document.getElementById('fileName').textContent = this.files[0]?.name || 'No file chosen';
+  });
+
+  // Drag-and-drop visual feedback
+  const dz = document.getElementById('dropZone');
+  ['dragenter','dragover'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.add('drag-over'); }));
+  ['dragleave','drop'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.remove('drag-over'); }));
+  dz.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) {
+      document.getElementById('resumeFile').files = e.dataTransfer.files;
+      document.getElementById('fileName').textContent = e.dataTransfer.files[0].name;
+    }
+  });
+</script>
+{% endblock %}

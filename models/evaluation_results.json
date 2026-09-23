@@ -1,0 +1,136 @@
+{
+  "cross_validation_train_split": {
+    "Logistic Regression": {
+      "accuracy": 92.29,
+      "precision": 94.92,
+      "recall": 94.84,
+      "f1": 94.84,
+      "balanced_accuracy": 89.76,
+      "roc_auc": 97.44
+    },
+    "Decision Tree": {
+      "accuracy": 86.04,
+      "precision": 90.11,
+      "recall": 91.36,
+      "f1": 90.72,
+      "balanced_accuracy": 80.8,
+      "roc_auc": 84.35
+    },
+    "Random Forest": {
+      "accuracy": 91.67,
+      "precision": 92.99,
+      "recall": 96.09,
+      "f1": 94.51,
+      "balanced_accuracy": 87.3,
+      "roc_auc": 95.54
+    },
+    "Gradient Boosting": {
+      "accuracy": 90.42,
+      "precision": 92.32,
+      "recall": 95.12,
+      "f1": 93.68,
+      "balanced_accuracy": 85.79,
+      "roc_auc": 95.42
+    },
+    "SVM": {
+      "accuracy": 91.04,
+      "precision": 93.11,
+      "recall": 95.12,
+      "f1": 94.07,
+      "balanced_accuracy": 87.01,
+      "roc_auc": 96.39
+    }
+  },
+  "held_out_test_split": {
+    "Logistic Regression": {
+      "accuracy": 92.92,
+      "precision": 93.58,
+      "recall": 97.22,
+      "f1_score": 95.37,
+      "balanced_accuracy": 88.61,
+      "roc_auc": 97.89,
+      "confusion_matrix": [
+        [
+          48,
+          12
+        ],
+        [
+          5,
+          175
+        ]
+      ]
+    },
+    "Decision Tree": {
+      "accuracy": 90.83,
+      "precision": 93.89,
+      "recall": 93.89,
+      "f1_score": 93.89,
+      "balanced_accuracy": 87.78,
+      "roc_auc": 90.38,
+      "confusion_matrix": [
+        [
+          49,
+          11
+        ],
+        [
+          11,
+          169
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 93.33,
+      "precision": 93.62,
+      "recall": 97.78,
+      "f1_score": 95.65,
+      "balanced_accuracy": 88.89,
+      "roc_auc": 97.58,
+      "confusion_matrix": [
+        [
+          48,
+          12
+        ],
+        [
+          4,
+          176
+        ]
+      ]
+    },
+    "Gradient Boosting": {
+      "accuracy": 93.75,
+      "precision": 94.12,
+      "recall": 97.78,
+      "f1_score": 95.91,
+      "balanced_accuracy": 89.72,
+      "roc_auc": 97.81,
+      "confusion_matrix": [
+        [
+          49,
+          11
+        ],
+        [
+          4,
+          176
+        ]
+      ]
+    },
+    "SVM": {
+      "accuracy": 92.5,
+      "precision": 94.02,
+      "recall": 96.11,
+      "f1_score": 95.05,
+      "balanced_accuracy": 88.89,
+      "roc_auc": 97.28,
+      "confusion_matrix": [
+        [
+          49,
+          11
+        ],
+        [
+          7,
+          173
+        ]
+      ]
+    }
+  }
+}

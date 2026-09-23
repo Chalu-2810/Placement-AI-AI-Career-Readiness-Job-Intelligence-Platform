@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+{% block title %}Readiness Estimate — PlacementAI{% endblock %}
+
+{% block content %}
+{% set sg = result.skill_gap %}
+
+<!-- ===== HERO: READINESS INSTRUMENT ===== -->
+<div class="panel panel-casing panel-raised mb-4">
+  <div class="panel-body" style="padding:32px 24px">
+    <div class="row align-items-center g-4">
+      <div class="col-md-5 text-center">
+        <span class="panel-eyebrow">Placement readiness</span>
+        {% set score = result.readiness_score %}
+        {% set level = result.readiness_level %}
+        {% set previous_score = previous_readiness_score %}
+        {% set gauge_id = 'resultGauge' %}
+        {% include '_gauge.html' %}
+      </div>
+      <div class="col-md-7">
+        <h1 style="font-size:1.5rem;color:var(--casing-ink)">
+          {{ result.result_label|default('Model-Based Placement Readiness Estimate') }}
+        </h1>
+        <p style="color:rgba(231,236,234,0.8)">
+          {% if result.prediction == 'Placed' %}
+            {{ user.full_name }}, your profile scores well against the model's readiness benchmarks for
+            <strong>{{ academic.domain }}</strong>.
+          {% else %}
+            {{ user.full_name }}, here's where your profile stands for <strong>{{ academic.domain }}</strong> —
+            follow the journey below to close the gaps.
+          {% endif %}
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-3">
+          <div class="readout"><span class="readout-label" style="color:rgba(231,236,234,0.6)">Model confidence</span><span class="readout-value" style="color:var(--casing-ink)">{{ result.confidence }}<span class="unit">%</span></span></div>
+          <div class="readout"><span class="readout-label" style="color:rgba(231,236,234,0.6)">Target domain</span><span class="readout-value" style="color:var(--casing-ink);font-size:1.1rem">{{ academic.domain }}</span></div>
+        </div>
+        <p class="small mt-3 mb-0" style="color:rgba(231,236,234,0.55)">
+          This is a model-based estimate, not a guarantee or a real-world probability of employment.
+          The model is trained on a synthetic, formula-generated dataset for demonstration purposes —
+          see <code style="color:rgba(231,236,234,0.75)">docs/ml-methodology.md</code> in the project repository
+          for full methodology and limitations.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI CAREER INSIGHTS ===== -->
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-compass" style="color:var(--brass)"></i> AI career insights</h2></div>
+  <div class="panel-body">
+    {% set gaps = {'Aptitude': sg.apt_gap, 'Technical': sg.tech_gap, 'Communication': sg.comm_gap} %}
+    {% set strongest_area = gaps|dictsort(by='value') | first %}
+    {% set weakest_area = gaps|dictsort(by='value') | last %}
+
+    <div class="insight insight--good">
+      <span class="insight-label">Strength</span>
+      <p class="insight-body mb-0">
+        {% set strongest_value = sg.apt_score if strongest_area[0]=='Aptitude' else (sg.tech_score if strongest_area[0]=='Technical' else sg.comm_score) %}
+        Your <strong>{{ strongest_area[0] }}</strong> score ({{ strongest_value }}%)
+        is your best-performing signal relative to benchmark for {{ academic.domain }} roles.
+      </p>
+    </div>
+
+    <div class="insight insight--gap">
+      <span class="insight-label">Gap</span>
+      <p class="insight-body mb-0">
+        {% if weakest_area[1] > 0 %}
+        <strong>{{ weakest_area[0] }}</strong> is currently your largest gap against benchmark
+        ({{ weakest_area[1] }} points behind).
+        {% if sg.weak_areas %} Weak areas flagged: {% for area in sg.weak_areas %}<span class="chip chip--gap ms-1">{{ area }}</span>{% endfor %}{% endif %}
+        {% else %}
+        You're at or above benchmark across aptitude, technical, and communication — no major gap flagged.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="insight insight--move">
+      <span class="insight-label">Next move</span>
+      <p class="insight-body mb-0">
+        {% if sg.suggestions %}{{ sg.suggestions[0] }}{% else %}Keep your resume and skills current, then re-run this estimate periodically.{% endif %}
+      </p>
+    </div>
+
+    {% set ex = result.explainability %}
+    {% if ex and ex.method != 'unavailable' and ex.factors %}
+    <hr style="border-color:var(--line)">
+    <div class="panel-eyebrow mb-1">Factors influencing this model estimate</div>
+    <p class="small mb-3">
+      These reflect what the model's own math weighted for this specific prediction — not a
+      real-world explanation of why someone is or isn't hired. The model is trained on a synthetic,
+      formula-generated dataset (see <code>docs/ml-methodology.md</code>), so this shows model
+      contribution, not causation.
+    </p>
+
+    {% set top_factors = ex.factors[:5] %}
+    {% set rest_factors = ex.factors[5:] %}
+    {% set max_abs = (ex.factors | map(attribute='contribution') | map('abs') | list | max) if ex.factors else 1 %}
+
+    {% if ex.method == 'linear_coefficient' %}
+      {% set supports = top_factors | selectattr('direction', 'equalto', 'up') | list %}
+      {% set pulls_down = top_factors | selectattr('direction', 'equalto', 'down') | list %}
+
+      {% if supports %}
+      <div class="skill-band">
+        <div class="skill-band-title strong"><i class="fas fa-arrow-up"></i> Supports the estimate</div>
+        {% for f in supports %}
+        <div class="skill-row strong">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution|abs / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">+{{ f.contribution|round(2) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if pulls_down %}
+      <div class="skill-band">
+        <div class="skill-band-title gap"><i class="fas fa-arrow-down"></i> Pulls the estimate down</div>
+        {% for f in pulls_down %}
+        <div class="skill-row gap">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution|abs / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">{{ f.contribution|round(2) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    {% elif ex.method == 'tree_importance_global' %}
+      <p class="small" style="color:var(--ink-soft)">
+        The selected model doesn't support a per-prediction breakdown — showing what it weighs most
+        <strong>across all predictions in general</strong>, not specifically for this result.
+      </p>
+      <div class="skill-band">
+        {% for f in top_factors %}
+        <div class="skill-row">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">{{ (f.contribution * 100)|round(1) }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if rest_factors %}
+    <button type="button" class="btn-wp btn-wp--ghost mt-2" id="factorsToggle" onclick="toggleFactors()">
+      Show all {{ ex.factors|length }} factors <i class="fas fa-chevron-down" id="factorsChevron"></i>
+    </button>
+    <div id="factorsRest" class="d-none mt-2">
+      {% if ex.method == 'linear_coefficient' %}
+        {% set rest_supports = rest_factors | selectattr('direction', 'equalto', 'up') | list %}
+        {% set rest_pulls = rest_factors | selectattr('direction', 'equalto', 'down') | list %}
+        {% for f in rest_supports %}
+        <div class="skill-row strong">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution|abs / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">+{{ f.contribution|round(2) }}</span>
+        </div>
+        {% endfor %}
+        {% for f in rest_pulls %}
+        <div class="skill-row gap">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution|abs / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">{{ f.contribution|round(2) }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        {% for f in rest_factors %}
+        <div class="skill-row">
+          <span class="skill-name">{{ f.label }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (f.contribution / max_abs * 100)|round(1) }}%"></div></div>
+          <span class="font-mono small">{{ (f.contribution * 100)|round(1) }}%</span>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- ===== SKILL INTELLIGENCE ===== -->
+  <div class="col-md-7" id="skills">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-layer-group" style="color:var(--chart-teal)"></i> Skill intelligence</h2></div>
+      <div class="panel-body">
+
+        {% set bands = {'strong': [], 'developing': [], 'gap': []} %}
+        {% for label, score_v, gap_v in [('Aptitude', sg.apt_score, sg.apt_gap), ('Technical', sg.tech_score, sg.tech_gap), ('Communication', sg.comm_score, sg.comm_gap)] %}
+          {% if gap_v <= 0 %}{% set _ = bands['strong'].append((label, score_v, gap_v)) %}
+          {% elif gap_v <= 15 %}{% set _ = bands['developing'].append((label, score_v, gap_v)) %}
+          {% else %}{% set _ = bands['gap'].append((label, score_v, gap_v)) %}{% endif %}
+        {% endfor %}
+        {% if sg.resume_score >= 75 %}{% set _ = bands['strong'].append(('Resume ATS', sg.resume_score, none)) %}
+        {% elif sg.resume_score >= 50 %}{% set _ = bands['developing'].append(('Resume ATS', sg.resume_score, none)) %}
+        {% else %}{% set _ = bands['gap'].append(('Resume ATS', sg.resume_score, none)) %}{% endif %}
+
+        {% if bands['strong'] %}
+        <div class="skill-band">
+          <div class="skill-band-title strong"><i class="fas fa-check"></i> Strong</div>
+          {% for name, sv, gv in bands['strong'] %}
+          <div class="skill-row strong">
+            <span class="skill-name">{{ name }}</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ sv }}%"></div></div>
+            <span class="font-mono">{{ sv|round(1) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if bands['developing'] %}
+        <div class="skill-band">
+          <div class="skill-band-title developing"><i class="fas fa-arrow-trend-up"></i> Developing</div>
+          {% for name, sv, gv in bands['developing'] %}
+          <div class="skill-row">
+            <span class="skill-name">{{ name }}</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ sv }}%"></div></div>
+            <span class="font-mono">{{ sv|round(1) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if bands['gap'] %}
+        <div class="skill-band">
+          <div class="skill-band-title gap"><i class="fas fa-triangle-exclamation"></i> Priority gap</div>
+          {% for name, sv, gv in bands['gap'] %}
+          <div class="skill-row gap">
+            <span class="skill-name">{{ name }}</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ sv }}%"></div></div>
+            <span class="font-mono">{{ sv|round(1) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if sg.suggestions %}
+        <hr style="border-color:var(--line)">
+        <div class="panel-eyebrow mb-2">Suggestions</div>
+        <ul class="mb-0 ps-3" style="font-size:0.85rem">
+          {% for tip in sg.suggestions %}<li class="mb-1">{{ tip }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCORE PROFILE (radar, secondary) ===== -->
+  <div class="col-md-5">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-chart-line" style="color:var(--brass)"></i> Score profile</h2></div>
+      <div class="panel-body d-flex justify-content-center align-items-center">
+        <canvas id="radarChart" width="280" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OPPORTUNITIES ===== -->
+<div id="opportunities" class="row g-4 mb-4">
+  <div class="col-12">
+    <p class="small mb-0">
+      <i class="fas fa-satellite-dish me-1" style="color:var(--chart-teal)"></i>
+      Want real-world job-market data for this domain? See
+      <a href="{{ url_for('opportunities') }}">Job Market Intelligence →</a>
+      (skills, roles, and locations from actual job postings — separate from this model-based estimate).
+    </p>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-briefcase" style="color:var(--signal-good)"></i> Job roles</h2></div>
+      <div class="panel-body">
+        <div class="d-flex flex-column gap-2">
+          {% for role in result.job_roles %}
+          <div class="d-flex align-items-center gap-2 p-2" style="background:var(--good-tint);border-radius:var(--r-control)">
+            <i class="fas fa-user-tie" style="color:var(--signal-good)"></i>
+            <span class="fw-semibold small">{{ role }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-diagram-project" style="color:var(--chart-teal)"></i> {{ academic.domain }} — skills &amp; platforms</h2></div>
+      <div class="panel-body">
+        {% set dr = result.domain_recommendation %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="panel-eyebrow mb-2">Key skills to master</div>
+            <div class="d-flex flex-wrap gap-1 mb-3">
+              {% for s in dr.skills %}<span class="chip chip--teal">{{ s }}</span>{% endfor %}
+            </div>
+            <div class="panel-eyebrow mb-2">Practice platforms</div>
+            <div class="d-flex flex-wrap gap-1">
+              {% for p in dr.platforms %}<span class="chip chip--good">{{ p }}</span>{% endfor %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="panel-eyebrow mb-2">Certifications</div>
+            <ul class="ps-3 mb-3" style="font-size:0.85rem">{% for cert in dr.certifications %}<li>{{ cert }}</li>{% endfor %}</ul>
+            <div class="panel-eyebrow mb-2">Mini projects</div>
+            <ul class="ps-3 mb-0" style="font-size:0.85rem">{% for proj in dr.projects %}<li>{{ proj }}</li>{% endfor %}</ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COURSES ===== -->
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-graduation-cap" style="color:var(--brass)"></i> Recommended courses for {{ academic.domain }}</h2></div>
+  <div class="panel-body">
+    <div class="row g-3">
+      {% for course in result.courses %}
+      <div class="col-md-4">
+        <div class="panel h-100">
+          <div class="panel-body p-tight">
+            <span class="chip {{ 'chip--good' if course.type == 'Free' else ('chip--teal' if course.type == 'Free Audit' else 'chip--brass') }} mb-2">{{ course.type }}</span>
+            <h6 class="fw-semibold small mb-1">{{ course.title }}</h6>
+            <p class="small mb-2">{{ course.provider }}</p>
+            <a href="{{ course.link }}" target="_blank" rel="noopener" class="btn-wp btn-wp--secondary btn-wp--block" style="font-size:0.78rem;padding:8px">
+              View course <i class="fas fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ===== CAREER JOURNEY (roadmap) ===== -->
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-map" style="color:var(--chart-teal)"></i> Your career journey</h2></div>
+  <div class="panel-body">
+    <div class="journey">
+      {% for period, stage in result.roadmap.items() %}
+      <div class="journey-stage">
+        <div class="journey-stage-label">{{ period.replace('_day_plan','').replace('_',' ') }} days</div>
+
+        {% if stage.focus %}
+        <p class="small mb-2">
+          <strong>Focus:</strong> {{ stage.focus | join(' · ') }}
+        </p>
+        {% endif %}
+
+        <ul class="mb-0 ps-0" style="list-style:none">
+          {% for item in stage.deliverables %}
+          <li class="mb-2">
+            <label class="d-flex align-items-start gap-2" style="cursor:pointer">
+              <input type="checkbox" class="form-check-input roadmap-task-toggle mt-1" data-task-id="{{ item.id }}"
+                     {% if item.id in roadmap_progress %}checked{% endif %}>
+              <span class="roadmap-task-text" style="font-size:0.88rem">{{ item.text }}</span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ===== ALL MODEL PREDICTIONS ===== -->
+{% if result.all_model_preds %}
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-robot" style="color:var(--ink-soft)"></i> All model predictions</h2></div>
+  <div class="panel-body p-tight">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Model</th><th>Prediction</th><th>Confidence</th></tr></thead>
+      <tbody>
+        {% for mname, mdata in result.all_model_preds.items() %}
+        <tr>
+          <td class="fw-semibold small">{{ mname }}</td>
+          <td><span class="chip {{ 'chip--good' if mdata.prediction == 'Placed' else 'chip--gap' }}">{{ mdata.prediction }}</span></td>
+          <td>
+            <div class="progress mb-1" style="height:6px;width:100px"><div class="progress-bar" style="width:{{ mdata.confidence }}%"></div></div>
+            <span class="small font-mono">{{ mdata.confidence }}%</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== ACTIONS ===== -->
+<div class="d-flex gap-2 flex-wrap justify-content-center">
+  <a href="{{ url_for('dashboard') }}" class="btn-wp btn-wp--secondary"><i class="fas fa-house"></i> Overview</a>
+  <a href="{{ url_for('academic') }}" class="btn-wp btn-wp--secondary"><i class="fas fa-pen"></i> Update details</a>
+  <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary"><i class="fas fa-rotate"></i> Re-run estimate</a>
+  <button onclick="window.print()" class="btn-wp btn-wp--secondary"><i class="fas fa-print"></i> Print report</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleFactors() {
+  const rest = document.getElementById('factorsRest');
+  const chevron = document.getElementById('factorsChevron');
+  const btn = document.getElementById('factorsToggle');
+  const hidden = rest.classList.toggle('d-none');
+  chevron.classList.toggle('fa-chevron-down', hidden);
+  chevron.classList.toggle('fa-chevron-up', !hidden);
+  btn.firstChild.textContent = hidden
+    ? `Show all {{ result.explainability.factors|length if result.explainability else 0 }} factors `
+    : 'Show fewer factors ';
+}
+
+// Phase 10: roadmap deliverable completion toggle. Same CSRF pattern as
+// /generate_quiz (X-CSRFToken header, since this is a fetch() call, not
+// an HTML form submission). Checkbox state reverts on any error so the
+// UI never shows a completion state that wasn't actually saved.
+document.querySelectorAll('.roadmap-task-toggle').forEach(cb => {
+  const label = cb.closest('label').querySelector('.roadmap-task-text');
+  if (cb.checked) label.classList.add('is-complete');
+
+  cb.addEventListener('change', async () => {
+    const taskId = cb.dataset.taskId;
+    const wasChecked = cb.checked;
+    cb.disabled = true;
+    try {
+      const res = await fetch('/roadmap/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ task_id: taskId }),
+      });
+      const data = await res.json();
+      if (!res.ok || typeof data.completed !== 'boolean') throw new Error(data.error || 'toggle failed');
+      cb.checked = data.completed;
+      label.classList.toggle('is-complete', data.completed);
+    } catch (e) {
+      cb.checked = !wasChecked; // revert -- never show an unsaved state as saved
+    } finally {
+      cb.disabled = false;
+    }
+  });
+});
+</script>
+<script>
+const sg = {{ result.skill_gap | tojson }};
+
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Aptitude', 'Technical', 'Communication', 'Resume ATS', 'CGPA (×10)'],
+    datasets: [{
+      label: 'Your scores',
+      data: [sg.apt_score, sg.tech_score, sg.comm_score, sg.resume_score, {{ academic.cgpa * 10 }}],
+      backgroundColor: 'rgba(31,92,82,0.15)',
+      borderColor: '#1F5C52',
+      pointBackgroundColor: '#1F5C52',
+      borderWidth: 2
+    }, {
+      label: 'Benchmark',
+      data: [70.5, 72.3, 68.8, 70, 70],
+      backgroundColor: 'rgba(190,140,51,0.08)',
+      borderColor: '#BE8C33',
+      pointBackgroundColor: '#BE8C33',
+      borderWidth: 1,
+      borderDash: [5, 5]
+    }]
+  },
+  options: {
+    scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } },
+    plugins: { legend: { position: 'bottom', labels: { font: { family: 'IBM Plex Sans' } } } }
+  }
+});
+</script>
+{% endblock %}

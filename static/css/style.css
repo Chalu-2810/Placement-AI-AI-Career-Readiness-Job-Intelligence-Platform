@@ -1,0 +1,490 @@
+/* ============================================================
+   PlacementAI — "Waypoint" Design System
+   A career-instrument visual language: charts, gauges, bearings —
+   not a sidebar-and-KPI-cards dashboard. See docs/design-system.md.
+   Bootstrap is retained ONLY for its grid/flex utilities; every visual
+   surface (color, radius, shadow, type) is overridden here.
+   ============================================================ */
+
+:root {
+  /* ---- Color ---- */
+  --paper:          #EEF2F0;
+  --panel:          #FFFFFF;
+  --ink:            #16233A;
+  --ink-soft:       #4B5A70;
+  --ink-faint:      #8A97A8;
+  --line:           #D8DFDC;
+  --line-strong:    #B8C2BE;
+  --brass:          #BE8C33;
+  --brass-deep:     #96691F;
+  --brass-ink:      #8C6212; /* text-safe variant: 5.4:1 on white/paper, used
+                                 wherever brass appears as small text rather
+                                 than a fill/border (fixed during a11y pass —
+                                 --brass-deep alone was 4.29:1 on paper,
+                                 short of WCAG AA's 4.5:1 for normal text) */
+  --brass-tint:     rgba(190,140,51,0.12);
+  --chart-teal:     #1F5C52;
+  --teal-tint:      rgba(31,92,82,0.10);
+  --signal-good:    #2E7D5B;
+  --good-tint:      rgba(46,125,91,0.10);
+  --signal-gap:     #B5533C;
+  --gap-tint:       rgba(181,83,60,0.10);
+  --signal-missing: #8A3B32;
+  --casing:         #0F1B2B;
+  --casing-line:    #2A3B52;
+  --casing-ink:     #E7ECEA;
+
+  /* ---- Type ---- */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
+
+  /* ---- Shape ---- */
+  --r-panel: 4px;
+  --r-control: 3px;
+  --shadow-raised: 0 8px 24px rgba(15,27,43,0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.font-mono, .readout-value, .num { font-family: var(--font-mono); }
+
+a { color: var(--chart-teal); text-decoration: none; }
+a:hover { color: var(--brass-ink); text-decoration: underline; }
+
+small, .small { color: var(--ink-soft); }
+
+::selection { background: var(--brass-tint); color: var(--ink); }
+
+:focus-visible {
+  outline: 3px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   CONSOLE NAVIGATION (replaces sidebar-navbar pattern)
+   ============================================================ */
+.console-nav {
+  background: var(--casing);
+  border-bottom: 1px solid var(--casing-line);
+  padding: 0 24px;
+}
+.console-nav .console-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  gap: 24px;
+}
+.console-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--casing-ink);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.console-wordmark .mark {
+  color: var(--brass);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  border: 1px solid var(--brass);
+  border-radius: var(--r-control);
+  padding: 1px 6px;
+}
+.console-links {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.console-links a {
+  color: var(--casing-ink);
+  opacity: 0.72;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 8px 14px;
+  border-radius: var(--r-control);
+  text-decoration: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+.console-links a:hover { opacity: 1; background: rgba(255,255,255,0.06); text-decoration: none; }
+.console-links a.active { opacity: 1; color: var(--brass); background: rgba(190,140,51,0.12); }
+.console-account { display: flex; align-items: center; gap: 10px; }
+.console-account .btn-console {
+  color: var(--casing-ink);
+  border: 1px solid var(--casing-line);
+  background: transparent;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: var(--r-control);
+}
+.console-account .btn-console:hover { border-color: var(--brass); color: var(--brass); }
+.console-toggle { display: none; background: none; border: none; color: var(--casing-ink); font-size: 1.3rem; }
+
+@media (max-width: 767px) {
+  .console-nav { padding: 0 16px; }
+  .console-links {
+    position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+    background: var(--casing);
+    border-top: 1px solid var(--casing-line);
+    justify-content: space-around;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    z-index: 1030;
+  }
+  .console-links a { display: flex; flex-direction: column; font-size: 0.65rem; padding: 8px 4px; text-align: center; min-height: 48px; justify-content: center; align-items: center; }
+  main { padding-bottom: 72px !important; }
+}
+
+/* ============================================================
+   PANELS (replaces Bootstrap .card as primary container)
+   ============================================================ */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+}
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.panel-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.panel-body { padding: 20px; }
+.panel-body.p-tight { padding: 12px 16px; }
+
+.panel-raised { box-shadow: var(--shadow-raised); }
+
+/* Casing (dark) panel variant — used for hero/instrument surfaces */
+.panel-casing {
+  background: var(--casing);
+  border: 1px solid var(--casing-line);
+  color: var(--casing-ink);
+  border-radius: var(--r-panel);
+}
+.panel-casing .panel-eyebrow { color: rgba(231,236,234,0.6); }
+.panel-casing h1, .panel-casing h2, .panel-casing h3 { color: var(--casing-ink); }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-wp {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  padding: 10px 20px;
+  min-height: 44px;
+  border-radius: var(--r-control);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  cursor: pointer;
+}
+.btn-wp:active { transform: translateY(1px); }
+
+.btn-wp--primary { background: var(--brass-deep); color: #fff; border-color: var(--brass-deep); }
+.btn-wp--primary:hover { background: #7A5717; border-color: #7A5717; color: #fff; text-decoration: none; }
+.btn-wp--primary:disabled { background: var(--ink-faint); border-color: var(--ink-faint); cursor: not-allowed; }
+
+.btn-wp--secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-wp--secondary:hover { border-color: var(--ink); color: var(--ink); text-decoration: none; }
+
+.btn-wp--ghost { background: transparent; color: var(--chart-teal); border-color: transparent; padding-left: 4px; padding-right: 4px; }
+.btn-wp--ghost:hover { color: var(--brass-ink); text-decoration: underline; }
+
+.btn-wp--on-dark { background: transparent; color: var(--casing-ink); border-color: var(--casing-line); }
+.btn-wp--on-dark:hover { border-color: var(--brass); color: var(--brass); }
+
+.btn-wp--block { width: 100%; justify-content: center; }
+.btn-wp--lg { padding: 13px 28px; font-size: 0.95rem; }
+
+/* ============================================================
+   READOUTS — the primary way a score/measurement is displayed
+   ============================================================ */
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.readout-value {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.readout-value.lg { font-size: 2.4rem; }
+.readout-value .unit { font-size: 0.9rem; color: var(--ink-soft); font-weight: 400; margin-left: 2px; }
+.readout--good .readout-value { color: var(--signal-good); }
+.readout--gap .readout-value { color: var(--signal-gap); }
+
+/* ============================================================
+   SIGNAL CHIPS (badges)
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-soft);
+  background: var(--panel);
+  letter-spacing: 0.01em;
+}
+.chip--brass  { color: var(--brass-ink); border-color: var(--brass); background: var(--brass-tint); }
+.chip--good   { color: var(--signal-good); border-color: var(--signal-good); background: var(--good-tint); }
+.chip--gap    { color: var(--signal-gap); border-color: var(--signal-gap); background: var(--gap-tint); }
+.chip--missing{ color: var(--signal-missing); border-color: var(--signal-missing); background: rgba(138,59,50,0.08); }
+.chip--teal   { color: var(--chart-teal); border-color: var(--chart-teal); background: var(--teal-tint); }
+.chip--on-dark{ color: var(--casing-ink); border-color: var(--casing-line); background: transparent; }
+
+/* ============================================================
+   INSIGHT BLOCKS (editorial AI insights — no chat bubbles)
+   ============================================================ */
+.insight {
+  border-left: 3px solid var(--line-strong);
+  padding: 4px 0 4px 16px;
+  margin-bottom: 20px;
+}
+.insight:last-child { margin-bottom: 0; }
+.insight--good { border-left-color: var(--signal-good); }
+.insight--gap { border-left-color: var(--signal-gap); }
+.insight--move { border-left-color: var(--brass); }
+.insight-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+}
+.insight--good .insight-label { color: var(--signal-good); }
+.insight--gap .insight-label { color: var(--signal-gap); }
+.insight--move .insight-label { color: var(--brass-ink); }
+.insight-body { color: var(--ink); font-size: 0.92rem; line-height: 1.6; }
+
+/* ============================================================
+   JOURNEY TIMELINE (career roadmap — genuine sequence)
+   ============================================================ */
+.journey { position: relative; padding-left: 28px; }
+.journey::before {
+  content: '';
+  position: absolute; left: 6px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--line-strong);
+}
+.journey-stage { position: relative; margin-bottom: 28px; }
+.journey-stage:last-child { margin-bottom: 0; }
+.journey-stage::before {
+  content: '';
+  position: absolute; left: -28px; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--brass);
+}
+.journey-stage-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--brass-ink); margin-bottom: 8px;
+}
+.journey-stage ol { margin: 0; padding-left: 18px; }
+.roadmap-task-text.is-complete { color: var(--ink-faint); text-decoration: line-through; }
+.journey-stage li { font-size: 0.88rem; margin-bottom: 6px; color: var(--ink); }
+
+/* ============================================================
+   SKILL LANDSCAPE (bands, not a table)
+   ============================================================ */
+.skill-band { margin-bottom: 20px; }
+.skill-band:last-child { margin-bottom: 0; }
+.skill-band-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.skill-band-title.strong { color: var(--signal-good); }
+.skill-band-title.developing { color: var(--brass-ink); }
+.skill-band-title.gap { color: var(--signal-gap); }
+.skill-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.skill-row:last-child { border-bottom: none; }
+.skill-row .skill-name { font-weight: 600; color: var(--ink); }
+.skill-bar-track { flex: 1; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 0 12px; }
+.skill-bar-fill { height: 100%; background: var(--chart-teal); border-radius: 3px; transition: width 0.6s ease; }
+.skill-row.gap .skill-bar-fill { background: var(--signal-gap); }
+.skill-row.strong .skill-bar-fill { background: var(--signal-good); }
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.field-label {
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft); display: block; margin-bottom: 6px;
+}
+.form-control, .form-select {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--panel);
+  padding: 10px 12px;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-tint);
+}
+.input-group-text { background: var(--paper); border-color: var(--line-strong); color: var(--ink-soft); }
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+.progress { border-radius: 3px; background: var(--line); height: 6px; }
+.progress-bar { transition: width 0.6s ease; background: var(--chart-teal); }
+
+/* ============================================================
+   BEARING GAUGE (signature element — see _gauge.html)
+   ============================================================ */
+.gauge-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
+.gauge-zone-labels {
+  display: flex; justify-content: space-between; width: 100%;
+  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-soft); margin-top: -6px; padding: 0 6px;
+}
+.gauge-readout { text-align: center; margin-top: 4px; }
+.gauge-score { font-family: var(--font-mono); font-size: 2.6rem; font-weight: 500; color: var(--ink); line-height: 1; }
+.gauge-score .of100 { font-size: 1.1rem; color: var(--ink-soft); }
+.gauge-level { font-size: 0.78rem; font-weight: 600; color: var(--brass-ink); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+.gauge-needle { transition: transform 0.8s cubic-bezier(0.4,0,0.2,1); transform-origin: 100px 100px; }
+@media (prefers-reduced-motion: reduce) { .gauge-needle { transition: none; } }
+
+/* ============================================================
+   STATE PATTERNS — loading checklist, empty, error
+   ============================================================ */
+.check-steps { list-style: none; padding: 0; margin: 0; }
+.check-steps li { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 0.88rem; color: var(--ink-soft); }
+.check-steps li .mark { font-family: var(--font-mono); width: 16px; text-align: center; }
+.check-steps li.done { color: var(--ink); }
+.check-steps li.done .mark { color: var(--signal-good); }
+.check-steps li.active .mark { color: var(--brass); }
+
+.empty-state { text-align: center; padding: 40px 24px; }
+.empty-state .icon { font-size: 2rem; color: var(--ink-faint); margin-bottom: 12px; }
+.empty-state h3 { font-size: 1.1rem; margin-bottom: 6px; }
+.empty-state p { color: var(--ink-soft); font-size: 0.88rem; max-width: 380px; margin: 0 auto 16px; }
+
+/* ============================================================
+   FLASH MESSAGES
+   ============================================================ */
+.flash-stack { max-width: 1280px; margin: 12px auto 0; padding: 0 24px; }
+.flash {
+  border-radius: var(--r-control);
+  border: 1px solid var(--line-strong);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.flash-success { border-color: var(--signal-good); background: var(--good-tint); color: var(--signal-good); }
+.flash-danger  { border-color: var(--signal-gap); background: var(--gap-tint); color: var(--signal-gap); }
+.flash-warning { border-color: var(--brass); background: var(--brass-tint); color: var(--brass-ink); }
+.flash-info    { border-color: var(--chart-teal); background: var(--teal-tint); color: var(--chart-teal); }
+.flash .btn-close { font-size: 0.7rem; opacity: 0.6; }
+
+/* ============================================================
+   MISC / LEGACY HOOKS (kept for elements not yet fully migrated)
+   ============================================================ */
+.option-label {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--r-control) !important;
+  background: var(--panel);
+}
+.option-label:hover { background: var(--brass-tint); border-color: var(--brass) !important; }
+.option-label.selected { background: var(--brass-tint); border-color: var(--brass) !important; font-weight: 600; }
+
+.upload-area {
+  border: 2px dashed var(--line-strong) !important;
+  border-radius: var(--r-panel) !important;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+  background: var(--paper);
+}
+.upload-area:hover, .upload-area.drag-over { border-color: var(--brass) !important; background: var(--brass-tint); }
+
+.table th {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 700; color: var(--casing-ink); background: var(--casing); border: none;
+}
+.table td { font-size: 0.85rem; border-color: var(--line); vertical-align: middle; }
+
+footer.wp-footer {
+  background: var(--casing); color: rgba(231,236,234,0.65);
+  border-top: 1px solid var(--casing-line);
+}
+
+/* ---- Print ---- */
+@media print {
+  .console-nav, footer, .btn-wp, #quizTabs { display: none !important; }
+  .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+  body { background: white; }
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "legal": "By using this API you agree to RemoteOK's terms",
+    "note": "This is the first element of the real RemoteOK feed and is NOT a job posting"
+  },
+  {
+    "id": "1001",
+    "position": "Data Analyst",
+    "company": "Acme Analytics",
+    "tags": ["sql", "python", "excel", "data visualization"],
+    "description": "We need a Data Analyst skilled in SQL, Python, Power BI and Excel to join our analytics team.",
+    "location": "Remote",
+    "salary_min": 60000,
+    "salary_max": 90000
+  },
+  {
+    "id": "1002",
+    "position": "Senior Data Scientist",
+    "company": "Beta AI",
+    "tags": ["python", "machine learning", "pandas", "tensorflow"],
+    "description": "Looking for a Data Scientist with strong Python, Machine Learning, Pandas and TensorFlow experience. SQL a plus.",
+    "location": "Remote (US)",
+    "salary_min": 120000,
+    "salary_max": 160000
+  },
+  {
+    "id": "1003",
+    "position": "BI Analyst",
+    "company": "Gamma Corp",
+    "tags": ["sql", "power bi", "tableau"],
+    "description": "BI Analyst role requiring SQL, Power BI and Tableau for dashboarding and reporting.",
+    "location": "Remote",
+    "salary_min": null,
+    "salary_max": null
+  },
+  {
+    "id": "1004",
+    "position": "Frontend Developer",
+    "company": "Delta Web",
+    "tags": ["react", "javascript", "html", "css"],
+    "description": "Frontend Developer needed with React, JavaScript, HTML and CSS skills for our web team.",
+    "location": "Remote",
+    "salary_min": 70000,
+    "salary_max": 95000
+  },
+  {
+    "id": "1005",
+    "position": "Full Stack Developer",
+    "company": "Epsilon Apps",
+    "tags": ["node", "react", "mongodb"],
+    "description": "Full Stack Developer with Node.js, React and MongoDB experience for a growing web platform.",
+    "location": "Remote",
+    "salary_min": 80000,
+    "salary_max": 110000
+  }
+]

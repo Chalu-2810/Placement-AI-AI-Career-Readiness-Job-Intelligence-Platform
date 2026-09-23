@@ -1,0 +1,56 @@
+{#
+  _gauge.html — the Bearing Gauge, PlacementAI's signature visualization.
+  Include with: {% set score = 78 %}{% set level = 'On Track' %}{% include '_gauge.html' %}
+  Optional: {% set previous_score = 70 %} to show a ghost mark of the prior assessment.
+  Optional: {% set gauge_id = 'dashGauge' %} if more than one gauge renders on the same page.
+#}
+{% set _score = score|default(0)|float %}
+{% set _clamped = 0 if _score < 0 else (100 if _score > 100 else _score) %}
+{% set _needle_deg = (_clamped / 100 * 180) - 90 %}
+{% set _gid = gauge_id|default('gauge') %}
+
+<div class="gauge-wrap">
+  <svg viewBox="0 0 200 118" width="220" height="130" role="img"
+       aria-label="Career readiness gauge showing {{ _clamped|round(0, 'common')|int }} out of 100">
+    <!-- Zone arcs: Building (0-40) / Developing (40-70) / Ready (70-100) -->
+    <path d="M 10 100 A 90 90 0 0 1 82 15.5" fill="none" stroke="var(--line-strong)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 84 14.8 A 90 90 0 0 1 148 25.3" fill="none" stroke="var(--brass)" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+    <path d="M 150 26.4 A 90 90 0 0 1 190 100" fill="none" stroke="var(--signal-good)" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- Ghost mark: previous assessment -->
+    {% if previous_score is defined and previous_score is not none %}
+      {% set _prev_deg = ((previous_score|float) / 100 * 180) - 90 %}
+      <g transform="rotate({{ _prev_deg }} 100 100)">
+        <line x1="100" y1="100" x2="100" y2="22" stroke="var(--ink-faint)" stroke-width="2" stroke-dasharray="2,3"/>
+      </g>
+    {% endif %}
+
+    <!-- Needle -->
+    <g class="gauge-needle" style="transform: rotate({{ _needle_deg }}deg)">
+      <line x1="100" y1="100" x2="100" y2="26" stroke="var(--brass-deep)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <circle cx="100" cy="100" r="7" fill="var(--brass-deep)"/>
+
+    <!-- Tick labels -->
+    <text x="10" y="112" font-size="8" fill="var(--ink-soft)" font-family="var(--font-mono)">0</text>
+    <text x="95" y="12" font-size="8" fill="var(--ink-soft)" font-family="var(--font-mono)">50</text>
+    <text x="182" y="112" font-size="8" fill="var(--ink-soft)" font-family="var(--font-mono)">100</text>
+  </svg>
+
+  <div class="gauge-zone-labels">
+    <span>Building</span><span>Developing</span><span>Ready</span>
+  </div>
+
+  <div class="gauge-readout">
+    <div class="gauge-score">{{ _clamped|round(0, 'common')|int }}<span class="of100">/100</span></div>
+    {% if level %}<div class="gauge-level">{{ level }}</div>{% endif %}
+    {% if previous_score is defined and previous_score is not none %}
+      {% set _delta = (_clamped - (previous_score|float))|round(0, 'common')|int %}
+      <div class="small mt-1">
+        {% if _delta > 0 %}<span class="chip chip--good">↑ +{{ _delta }} since last assessment</span>
+        {% elif _delta < 0 %}<span class="chip chip--gap">↓ {{ _delta }} since last assessment</span>
+        {% else %}<span class="chip">No change since last assessment</span>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>

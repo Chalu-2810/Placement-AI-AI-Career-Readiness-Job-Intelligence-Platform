@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Admin sign in — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="panel">
+      <div class="panel-body" style="padding:36px">
+        <div class="text-center mb-4">
+          <span class="mark" style="color:var(--brass);font-family:var(--font-mono);border:1px solid var(--brass);border-radius:var(--r-control);padding:2px 10px">ADMIN</span>
+          <h2 style="font-size:1.3rem;margin-top:12px">Operator console</h2>
+          <p class="small mb-0">Placement analytics &amp; student records</p>
+        </div>
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="mb-3">
+            <label class="field-label">Username</label>
+            <input type="text" name="username" class="form-control" required autofocus/>
+          </div>
+          <div class="mb-4">
+            <label class="field-label">Password</label>
+            <input type="password" name="password" class="form-control" required/>
+          </div>
+          <button type="submit" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg">
+            <i class="fas fa-lock"></i> Sign in
+          </button>
+        </form>
+        <p class="text-center small mt-3 mb-0"><a href="{{ url_for('login') }}">← Student sign in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

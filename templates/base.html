@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}"/>
+  <title>{% block title %}PlacementAI{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<nav class="console-nav">
+  <div class="console-inner">
+    <a class="console-wordmark" href="{{ url_for('dashboard') if session.get('user_id') else url_for('login') }}">
+      <span class="mark">PA</span>PlacementAI
+    </a>
+
+    {% if session.get('user_id') %}
+    <ul class="console-links">
+      <li><a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.path == url_for('dashboard') }}">Overview</a></li>
+      <li><a href="{{ url_for('academic') }}" class="{{ 'active' if request.path in [url_for('academic'), url_for('quiz_setup'), url_for('quiz_page')] }}">Assess</a></li>
+      <li><a href="{{ url_for('resume') }}" class="{{ 'active' if request.path == url_for('resume') }}">Resume</a></li>
+      <li><a href="{{ url_for('predict') }}#skills">Skills</a></li>
+      <li><a href="{{ url_for('opportunities') }}" class="{{ 'active' if request.path in [url_for('opportunities'), url_for('qualified')] }}">Opportunities</a></li>
+    </ul>
+    <div class="console-account">
+      <a class="btn-console" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+    </div>
+    {% elif session.get('admin_id') %}
+    <ul class="console-links">
+      <li><a href="{{ url_for('admin_dashboard') }}" class="active">Admin Overview</a></li>
+    </ul>
+    <div class="console-account">
+      <a class="btn-console" href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+    </div>
+    {% else %}
+    <div class="console-account">
+      <a class="btn-console" href="{{ url_for('login') }}">Sign in</a>
+      <a class="btn-wp btn-wp--primary" style="padding:8px 16px;font-size:0.8rem" href="{{ url_for('register') }}">Get started</a>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="flash-stack">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}" role="alert">
+        <span>{{ msg }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss" onclick="this.parentElement.style.display='none'"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<main class="container-fluid py-4" style="max-width:1280px; margin:0 auto;">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="wp-footer text-center py-4 mt-5 small">
+  PlacementAI — AI Career Intelligence &amp; Readiness Platform &copy; 2025 ·
+  <a href="#" class="text-decoration-none" style="color:inherit;opacity:0.8" onclick="return false;">Model-based estimates from a synthetic demo dataset</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

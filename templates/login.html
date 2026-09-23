@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Sign in — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-stretch g-0" style="min-height:70vh">
+  <div class="col-lg-5 d-none d-lg-flex">
+    <div class="panel panel-casing w-100 d-flex flex-column justify-content-center" style="padding:48px;border-radius:var(--r-panel) 0 0 var(--r-panel)">
+      <span class="mark" style="align-self:flex-start;color:var(--brass);font-family:var(--font-mono);border:1px solid var(--brass);border-radius:var(--r-control);padding:2px 8px;margin-bottom:16px">PA</span>
+      <h1 style="color:var(--casing-ink);font-size:2rem;line-height:1.2">
+        Know where you stand.<br/>Know what's next.
+      </h1>
+      <p style="color:rgba(231,236,234,0.7);max-width:340px">
+        PlacementAI reads your academic record, skills, and resume to give you a
+        model-based readiness estimate and a concrete plan to close the gaps.
+      </p>
+    </div>
+  </div>
+  <div class="col-lg-4 col-md-6">
+    <div class="panel h-100 d-flex flex-column justify-content-center" style="padding:40px;border-radius:0 var(--r-panel) var(--r-panel) 0">
+      <span class="panel-eyebrow mb-1">Welcome back</span>
+      <h2 style="font-size:1.4rem;margin-bottom:20px">Sign in to PlacementAI</h2>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="mb-3">
+          <label class="field-label">Email address</label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required autofocus/>
+        </div>
+        <div class="mb-4">
+          <label class="field-label">Password</label>
+          <input type="password" name="password" class="form-control" placeholder="Enter password" required/>
+        </div>
+        <button type="submit" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg">
+          <i class="fas fa-arrow-right"></i> Sign in
+        </button>
+      </form>
+      <p class="text-center small mt-4 mb-0">
+        New here? <a href="{{ url_for('register') }}" style="font-weight:600">Create an account</a>
+      </p>
+      <p class="text-center small mt-2">
+        <a href="{{ url_for('admin_login') }}">Admin sign in →</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

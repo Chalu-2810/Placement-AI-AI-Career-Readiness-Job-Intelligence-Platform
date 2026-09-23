@@ -1,0 +1,73 @@
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment variables
+# NOTE: `.env.*` would also match `.env.example`, which IS meant to be
+# tracked (it's a template with no real secrets) -- the negation below
+# keeps it un-ignored while still catching .env, .env.local, .env.prod, etc.
+.env
+.env.*
+!.env.example
+
+# Local databases
+# This project uses MySQL exclusively (see schema.sql / database.py) --
+# no local DB file is ever created by the app. Patterns kept as a
+# defensive backstop in case a local SQLite DB is ever used for testing.
+*.sqlite3
+*.sqlite
+*.db
+
+# ML model artifacts
+# FIX (security/repo-hygiene audit): Procfile ("web: gunicorn app:app") has
+# no build/release step that runs model_training.py, and README.md tells
+# users to skip training entirely "if the models/ folder already contains
+# .pkl files (pre-trained models are included)". Previously `models/*.pkl`
+# was gitignored, which contradicts that -- a fresh clone/deploy would have
+# NO model artifacts and prediction.py's model/scaler would load as None,
+# crashing /predict. Model artifacts are genuinely required at runtime with
+# no build step to regenerate them, so they are now tracked. If a real CI/CD
+# training pipeline is added later, this can be revisited.
+# models/*.pkl   <-- intentionally NOT ignored, see note above
+models/*.pkl.tmp
+
+# Dataset (regenerated deterministically via `python generate_dataset.py`,
+# fixed random seed -- safe to leave out of version control)
+dataset/*.csv
+
+# Flask
+instance/
+.webassets-cache
+
+# Testing / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/

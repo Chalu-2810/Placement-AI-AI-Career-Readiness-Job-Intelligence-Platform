@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Am I Qualified? — PlacementAI{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <span class="panel-eyebrow">Am I qualified?</span>
+    <h1 style="font-size:1.5rem;margin:2px 0 4px">{{ domain_name }}</h1>
+    {% if snapshot_fetched_at %}
+      <p class="small mb-0"><i class="fas fa-clock me-1"></i>Market snapshot as of
+        <strong class="font-mono">{{ snapshot_fetched_at }}</strong> — cached, not live.</p>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('opportunities') }}" class="btn-wp btn-wp--secondary"><i class="fas fa-arrow-left"></i> Job Market Intelligence</a>
+</div>
+
+{% if not roles %}
+<!-- EMPTY STATE -->
+<div class="panel">
+  <div class="panel-body empty-state">
+    <i class="fas fa-clipboard-question icon"></i>
+    <h3>Not enough role data yet for {{ domain_name }}</h3>
+    <p>
+      This page needs at least one classified job posting with a role title to build a
+      skill checklist. Check back after the next market data refresh.
+    </p>
+    <a href="{{ url_for('opportunities') }}" class="btn-wp btn-wp--primary">View Job Market Intelligence</a>
+  </div>
+</div>
+
+{% else %}
+
+<div class="panel panel-casing panel-raised mb-4">
+  <div class="panel-body" style="padding:24px">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-8">
+        <label class="field-label" style="color:rgba(231,236,234,0.7)" for="roleSelect">Target role</label>
+        <select name="role" id="roleSelect" class="form-select" onchange="this.form.submit()">
+          {% for r in roles %}
+          <option value="{{ r.role }}" {% if role_entry and r.role == role_entry.role %}selected{% endif %}>
+            {{ r.role }} — {{ r.posting_count }} posting{{ 's' if r.posting_count != 1 }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <p class="small mb-0" style="color:rgba(231,236,234,0.65)">
+          Your profile matches <strong style="color:var(--casing-ink)">{{ role_entry.posting_count }}</strong>
+          analyzed job posting{{ 's' if role_entry.posting_count != 1 }} for this exact role title in this snapshot.
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-list-check" style="color:var(--chart-teal)"></i> Skills for {{ role_entry.role }}</h2>
+        <span class="panel-eyebrow">Toggle what you have</span>
+      </div>
+      <div class="panel-body">
+        {% if role_entry.skills %}
+        <div id="skillChecklist">
+          {% for s in role_entry.skills %}
+          <label class="option-label d-flex align-items-center justify-content-between p-2 mb-2">
+            <span class="d-flex align-items-center gap-2">
+              <input type="checkbox" class="form-check-input qualified-skill-toggle" value="{{ s.skill }}"
+                     {% if s.skill in matched_skill_set %}checked{% endif %}>
+              <span class="skill-name">{{ s.skill|capitalize }}</span>
+            </span>
+            <span class="chip chip--teal">{{ s.count }} mention{{ 's' if s.count != 1 }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="small mb-0">No skills could be extracted from postings for this role.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="panel mb-4">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-bullseye" style="color:var(--brass)"></i> Role match</h2></div>
+      <div class="panel-body text-center">
+        <div class="readout-value lg" id="matchPercentDisplay">
+          {{ match.match_percentage if match and match.match_percentage is not none else '—' }}<span class="unit">%</span>
+        </div>
+        <p class="small mb-0" id="matchDetailDisplay">
+          {% if match and match.considered_count %}
+            <span id="matchedCountText">{{ match.matched_count }}</span> of {{ match.considered_count }} identified skills for this role
+          {% else %}
+            Toggle skills to see your match
+          {% endif %}
+        </p>
+        <p class="small mt-2 mb-0" style="color:var(--ink-soft)">
+          Calculated as (skills you have ∩ this role's top {{ match.considered_count if match else 'N' }} mentioned skills)
+          ÷ {{ match.considered_count if match else 'N' }} — a transparent overlap count, not an AI-generated score.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-star" style="color:var(--signal-gap)"></i> Missing skills</h2></div>
+      <div class="panel-body">
+        <ol class="ps-3 mb-0" id="missingSkillsList" style="font-size:0.9rem">
+          {% if match %}
+            {% for p in match.priority_skills %}<li class="mb-2" data-skill="{{ p.skill }}">{{ p.skill|capitalize }} <span class="small">({{ p.count }} mentions)</span></li>{% endfor %}
+          {% endif %}
+        </ol>
+        <p class="small mb-0" id="noMissingSkillsMsg" style="{{ 'display:none' if match and match.priority_skills else '' }}">
+          {% if match and match.has_student_skills and not match.priority_skills %}
+            You already cover every identified skill for this role. 🎉
+          {% elif not (session.get('ats_result')) %}
+            Upload your resume to pre-check the skills you already have — otherwise toggle them manually above.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SKILL GAP ANALYSIS: Gap x Importance (Phase 12) -->
+{% if priority_ranking %}
+<div class="panel mt-4">
+  <div class="panel-header">
+    <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-table-list" style="color:var(--chart-teal)"></i> Skill gap analysis</h2>
+    <span class="panel-eyebrow">Priority = Gap × Importance</span>
+  </div>
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th>Skill</th><th>Current</th><th>Target</th><th>Gap</th><th>Priority</th></tr></thead>
+        <tbody>
+          {% for row in priority_ranking %}
+          <tr>
+            <td class="small fw-semibold">{{ row.skill|capitalize }}</td>
+            <td class="small font-mono">{{ row.current|round|int }}</td>
+            <td class="small font-mono">{{ row.target|round|int }}</td>
+            <td class="small font-mono">{{ row.gap|round|int }}</td>
+            <td>
+              <span class="chip {{ 'chip--gap' if row.priority_label == 'HIGH' else ('chip--brass' if row.priority_label == 'Medium' else 'chip--good') }}">{{ row.priority_label }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel-body pt-0">
+    <p class="small mb-0" style="color:var(--ink-soft)">
+      <strong>Current</strong> is binary (100 = detected in your resume, 0 = not detected) — this app measures
+      skill presence, not proficiency level, so we don't invent a graduated score. <strong>Target</strong> is the
+      real percentage of {{ role_entry.role }} postings in this snapshot that mention the skill.
+      <strong>Gap</strong> = Target − Current (floored at 0). <strong>Priority</strong> = Gap × (Target ÷ 100),
+      so skills that are both a large gap <em>and</em> widely demanded rank highest.
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<p class="small text-center mt-4" style="color:var(--ink-soft)">
+  This is a transparent keyword-overlap calculation against real job postings, separate from your
+  model-based placement readiness estimate. See <code>docs/job-market-methodology.md</code>.
+</p>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Fully client-side recalculation on checkbox toggle -- no server
+  // round-trip. All the numbers needed (skill mention counts for this
+  // role) are already rendered on the page; this just recounts them.
+  const skillMentionCounts = {{ (role_entry.skills if role_entry else []) | tojson }};
+  const totalConsidered = skillMentionCounts.length;
+
+  function recomputeMatch() {
+    const checked = Array.from(document.querySelectorAll('.qualified-skill-toggle:checked')).map(el => el.value);
+    const matchedCount = checked.length;
+    const pct = totalConsidered > 0 ? Math.round((matchedCount / totalConsidered) * 1000) / 10 : null;
+
+    document.getElementById('matchPercentDisplay').innerHTML =
+      (pct !== null ? pct : '—') + '<span class="unit">%</span>';
+    document.getElementById('matchedCountText') &&
+      (document.getElementById('matchedCountText').textContent = matchedCount);
+
+    // Rebuild the missing-skills list from the current checkbox state.
+    const missingList = document.getElementById('missingSkillsList');
+    const noMissingMsg = document.getElementById('noMissingSkillsMsg');
+    if (missingList) {
+      missingList.innerHTML = '';
+      const missing = skillMentionCounts.filter(s => !checked.includes(s.skill))
+                                         .sort((a, b) => b.count - a.count)
+                                         .slice(0, 5);
+      missing.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'mb-2';
+        li.innerHTML = s.skill.charAt(0).toUpperCase() + s.skill.slice(1) +
+                        ' <span class="small">(' + s.count + ' mentions)</span>';
+        missingList.appendChild(li);
+      });
+      if (noMissingMsg) noMissingMsg.style.display = missing.length === 0 ? '' : 'none';
+    }
+  }
+
+  document.querySelectorAll('.qualified-skill-toggle').forEach(cb => {
+    cb.addEventListener('change', recomputeMatch);
+  });
+</script>
+{% endblock %}

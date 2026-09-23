@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block title %}Admin Overview — PlacementAI{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <span class="panel-eyebrow">Operator console</span>
+    <h1 style="font-size:1.5rem;margin:2px 0">Placement analytics</h1>
+  </div>
+</div>
+
+<!-- Summary stats (Phase 7) -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="panel panel-casing h-100">
+      <div class="panel-body">
+        <div class="readout-value lg" style="color:var(--casing-ink)">{{ summary.total_students }}</div>
+        <span class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Total students</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <div class="readout-value lg">{{ summary.assessments_completed }}</div>
+        <span class="panel-eyebrow">Assessments completed</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <div class="readout-value lg">{{ summary.avg_readiness if summary.avg_readiness is not none else '—' }}</div>
+        <span class="panel-eyebrow">Avg. readiness</span>
+        <div class="small mt-1">n={{ summary.students_with_prediction }} (latest prediction/student)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <div class="readout-value lg">{{ summary.placement_rate_pct if summary.placement_rate_pct is not none else '—' }}<span class="unit">%</span></div>
+        <span class="panel-eyebrow">Placement rate</span>
+        <div class="small mt-1">n={{ summary.students_with_prediction }} (latest prediction/student)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <div class="readout-value lg">
+          {% if summary.avg_ats_score is not none %}{{ summary.avg_ats_score }}{% else %}—{% endif %}
+        </div>
+        <span class="panel-eyebrow">Avg. ATS score</span>
+        <div class="small mt-1">
+          {% if summary.ats_sample_size %}n={{ summary.ats_sample_size }} (students who uploaded a resume)
+          {% else %}No resumes analyzed yet{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <span class="panel-eyebrow mb-2 d-block">Top domains</span>
+        {% if domain_distribution %}
+        <div class="d-flex flex-wrap gap-1">
+          {% for d in domain_distribution[:3] %}
+            {% if d.student_count > 0 %}<span class="chip chip--teal">{{ d.domain }} ({{ d.student_count }})</span>{% endif %}
+          {% endfor %}
+        </div>
+        {% else %}<p class="small mb-0">No academic details recorded yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <span class="panel-eyebrow mb-2 d-block">Most common skill gaps</span>
+        {% if skill_gap_frequency %}
+        <div class="d-flex flex-wrap gap-1">
+          {% for g in skill_gap_frequency[:3] %}<span class="chip chip--gap">{{ g.area }} ({{ g.count }})</span>{% endfor %}
+        </div>
+        {% else %}<p class="small mb-0">No skill gap records yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  {% for stat in stats %}
+  <div class="col-md-3">
+    <div class="panel h-100">
+      <div class="panel-body">
+        <div class="readout-value lg {{ 'readout--good' if stat.prediction == 'Placed' else 'readout--gap' }}">{{ stat.count }}</div>
+        <span class="panel-eyebrow">{{ stat.prediction }}</span>
+        <div class="small mt-1">Avg readiness: <span class="font-mono">{{ stat.avg_readiness | round(1) if stat.avg_readiness else 'N/A' }}%</span></div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if stats %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Placement distribution</h2></div>
+      <div class="panel-body d-flex justify-content-center"><canvas id="pieChart" width="220" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Average score comparison</h2></div>
+      <div class="panel-body"><canvas id="avgBar" height="120"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Domain distribution</h2></div>
+      <div class="panel-body"><canvas id="domainChart" height="180"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Readiness distribution</h2></div>
+      <div class="panel-body"><canvas id="readinessChart" height="180"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Skill-gap frequency</h2></div>
+      <div class="panel-body">
+        {% if skill_gap_frequency %}<canvas id="skillGapChart" height="180"></canvas>
+        {% else %}<p class="small mb-0">No skill gap records yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem">Registration trend</h2></div>
+      <div class="panel-body">
+        {% if registration_trend %}<canvas id="registrationChart" height="180"></canvas>
+        {% else %}<p class="small mb-0">No registrations recorded yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Students table -->
+<div class="panel">
+  <div class="panel-header">
+    <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-table"></i> All students</h2>
+    <input type="text" id="searchInput" class="form-control" style="max-width:220px;padding:6px 10px" placeholder="Search…"/>
+  </div>
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle" id="studentsTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Reg. No.</th><th>Dept.</th>
+            <th>CGPA</th><th>Domain</th>
+            <th>Aptitude</th><th>Technical</th><th>Comm.</th>
+            <th>Prediction</th><th>Confidence</th><th>Readiness</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td class="small">{{ loop.index }}</td>
+            <td class="fw-semibold small">{{ s.full_name }}</td>
+            <td class="small">{{ s.register_no }}</td>
+            <td class="small">{{ s.department }}</td>
+            <td class="small font-mono">{{ s.cgpa or '—' }}</td>
+            <td class="small">{{ s.domain or '—' }}</td>
+            <td class="small font-mono">{{ s.aptitude_score or '—' }}</td>
+            <td class="small font-mono">{{ s.technical_score or '—' }}</td>
+            <td class="small font-mono">{{ s.communication_score or '—' }}</td>
+            <td>
+              {% if s.prediction %}
+              <span class="chip {{ 'chip--good' if s.prediction == 'Placed' else 'chip--gap' }}">{{ s.prediction }}</span>
+              {% else %}<span class="small">—</span>{% endif %}
+            </td>
+            <td class="small font-mono">{{ ((s.confidence_score or 0) * 100) | round(1) }}%</td>
+            <td class="small font-mono">{{ s.readiness_score or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('searchInput').addEventListener('keyup', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  {% if stats %}
+  const stats = {{ stats | tojson }};
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: stats.map(s => s.prediction),
+      datasets: [{
+        data: stats.map(s => s.count),
+        backgroundColor: stats.map(s => s.prediction === 'Placed' ? '#2E7D5B' : '#B5533C'),
+        borderWidth: 2
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom', labels: { font: { family: 'IBM Plex Sans' } } } } }
+  });
+
+  new Chart(document.getElementById('avgBar'), {
+    type: 'bar',
+    data: {
+      labels: stats.map(s => s.prediction),
+      datasets: [{
+        label: 'Avg confidence (%)',
+        data: stats.map(s => ((s.avg_confidence || 0) * 100).toFixed(1)),
+        backgroundColor: '#1F5C52'
+      }, {
+        label: 'Avg readiness',
+        data: stats.map(s => (s.avg_readiness || 0).toFixed(1)),
+        backgroundColor: '#BE8C33'
+      }]
+    },
+    options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { position: 'bottom', labels: { font: { family: 'IBM Plex Sans' } } } } }
+  });
+  {% endif %}
+
+  // ---- Phase 7: admin analytics charts ----
+  const domainData = {{ domain_distribution | tojson }};
+  new Chart(document.getElementById('domainChart'), {
+    type: 'bar',
+    data: {
+      labels: domainData.map(d => d.domain),
+      datasets: [{ label: 'Students', data: domainData.map(d => d.student_count), backgroundColor: '#1F5C52' }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { precision: 0 } } }
+    }
+  });
+
+  const readinessData = {{ readiness_distribution | tojson }};
+  new Chart(document.getElementById('readinessChart'), {
+    type: 'bar',
+    data: {
+      labels: readinessData.map(r => r.bucket),
+      datasets: [{ label: 'Students', data: readinessData.map(r => r.count), backgroundColor: '#BE8C33' }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { precision: 0 } } } }
+  });
+
+  {% if skill_gap_frequency %}
+  const skillGapData = {{ skill_gap_frequency | tojson }};
+  new Chart(document.getElementById('skillGapChart'), {
+    type: 'bar',
+    data: {
+      labels: skillGapData.map(g => g.area),
+      datasets: [{ label: 'Students affected', data: skillGapData.map(g => g.count), backgroundColor: '#B5533C' }]
+    },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { precision: 0 } } } }
+  });
+  {% endif %}
+
+  {% if registration_trend %}
+  const regData = {{ registration_trend | tojson }};
+  new Chart(document.getElementById('registrationChart'), {
+    type: 'line',
+    data: {
+      labels: regData.map(r => r.reg_date),
+      datasets: [{ label: 'New registrations', data: regData.map(r => r.count), borderColor: '#1F5C52', backgroundColor: 'rgba(31,92,82,0.12)', fill: true, tension: 0.2 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { precision: 0 } } } }
+  });
+  {% endif %}
+</script>
+{% endblock %}

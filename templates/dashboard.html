@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Overview — PlacementAI{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <span class="panel-eyebrow">Career overview</span>
+    <h1 style="font-size:1.6rem;margin:2px 0 4px">{{ user.full_name }}</h1>
+    <p class="small mb-0">
+      {{ user.department }} &nbsp;·&nbsp; {{ user.register_no }} &nbsp;·&nbsp; Batch {{ user.batch_year }}
+    </p>
+  </div>
+  <a href="{{ url_for('academic') }}" class="btn-wp btn-wp--secondary">
+    <i class="fas fa-pen"></i> Update details
+  </a>
+</div>
+
+<!-- ===== READINESS INSTRUMENT (hero) ===== -->
+<div class="panel panel-casing panel-raised mb-4">
+  <div class="panel-body" style="padding:32px 24px">
+    <div class="row align-items-center g-4">
+      <div class="col-md-5 text-center">
+        <span class="panel-eyebrow">Your career readiness</span>
+        {% if prediction %}
+          {% set score = prediction.readiness_score %}
+          {% set level = prediction.readiness_level %}
+          {% set previous_score = previous_prediction.readiness_score if previous_prediction else none %}
+          {% set gauge_id = 'dashGauge' %}
+          {% include '_gauge.html' %}
+        {% else %}
+          {% set score = 0 %}
+          {% set level = none %}
+          {% set gauge_id = 'dashGaugeEmpty' %}
+          {% include '_gauge.html' %}
+          <p class="small mt-2" style="color:rgba(231,236,234,0.65)">Run your first prediction to calibrate this gauge.</p>
+        {% endif %}
+      </div>
+
+      <div class="col-md-7">
+        {% if prediction %}
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Strongest signal</div>
+            {% if strongest_signal %}
+              <div class="readout-value" style="color:var(--casing-ink)">{{ strongest_signal }}</div>
+              <span class="chip chip--good">{{ strongest_signal_value|round(1) }}%</span>
+            {% else %}<p class="small mb-0" style="color:rgba(231,236,234,0.6)">Complete your assessment to see this.</p>{% endif %}
+          </div>
+          <div class="col-6">
+            <div class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Priority gap</div>
+            {% if biggest_gap_signal and biggest_gap_signal != strongest_signal %}
+              <div class="readout-value" style="color:var(--casing-ink)">{{ biggest_gap_signal }}</div>
+              <span class="chip chip--gap">{{ biggest_gap_value|round(1) }}%</span>
+            {% elif biggest_gap_signal %}
+              <p class="small mb-0" style="color:rgba(231,236,234,0.6)">Fairly balanced across the board.</p>
+            {% else %}<p class="small mb-0" style="color:rgba(231,236,234,0.6)">Complete your assessment to see this.</p>{% endif %}
+          </div>
+          <div class="col-12 mt-2">
+            <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary">
+              <i class="fas fa-rotate"></i> Re-run readiness estimate
+            </a>
+            <a href="{{ url_for('predict') }}#skills" class="btn-wp btn-wp--on-dark">View skill intelligence</a>
+          </div>
+        </div>
+        {% else %}
+        <p style="color:rgba(231,236,234,0.75)">
+          Complete academic details, the skill assessment, and (optionally) your resume, then
+          run your first career readiness estimate.
+        </p>
+        <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary">
+          <i class="fas fa-gauge-high"></i> Run readiness estimate
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROGRESS ===== -->
+<div class="panel mb-4">
+  <div class="panel-header">
+    <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-route" style="color:var(--brass)"></i> Assessment progress</h2>
+  </div>
+  <div class="panel-body">
+    <div class="row text-center g-3">
+      <div class="col-6 col-md-3">
+        <div class="mb-2" style="font-size:1.3rem;color:{{ 'var(--signal-good)' if academic else 'var(--ink-faint)' }}"><i class="fas fa-book-open"></i></div>
+        <div class="small fw-semibold mb-1">Academic details</div>
+        {% if academic %}<span class="chip chip--good">Done</span>{% else %}<span class="chip">Pending</span>{% endif %}
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="mb-2" style="font-size:1.3rem;color:{{ 'var(--signal-good)' if quiz else 'var(--ink-faint)' }}"><i class="fas fa-clipboard-check"></i></div>
+        <div class="small fw-semibold mb-1">Skill assessment</div>
+        {% if quiz %}<span class="chip chip--good">Done</span>{% else %}<span class="chip">Pending</span>{% endif %}
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="mb-2" style="font-size:1.3rem;color:{{ 'var(--signal-good)' if session.get('resume_score') else 'var(--ink-faint)' }}"><i class="fas fa-file-lines"></i></div>
+        <div class="small fw-semibold mb-1">Resume</div>
+        {% if session.get('resume_score') %}<span class="chip chip--good">Done</span>{% else %}<span class="chip">Optional</span>{% endif %}
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="mb-2" style="font-size:1.3rem;color:{{ 'var(--signal-good)' if prediction else 'var(--ink-faint)' }}"><i class="fas fa-gauge-high"></i></div>
+        <div class="small fw-semibold mb-1">Readiness estimate</div>
+        {% if prediction %}<span class="chip chip--good">Done</span>{% else %}<span class="chip">Pending</span>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SIGNAL PANELS ===== -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-graduation-cap" style="color:var(--chart-teal)"></i> Academic</h2></div>
+      <div class="panel-body">
+        {% if academic %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1"><span>10th</span><strong class="font-mono">{{ academic.tenth_percentage }}%</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ academic.tenth_percentage }}%"></div></div>
+        </div>
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1"><span>12th</span><strong class="font-mono">{{ academic.twelfth_percentage }}%</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ academic.twelfth_percentage }}%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small mb-1"><span>CGPA</span><strong class="font-mono">{{ academic.cgpa }}/10</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ (academic.cgpa/10*100)|round }}%;background:var(--signal-good)"></div></div>
+        </div>
+        <p class="small mb-1"><i class="fas fa-layer-group me-1"></i>Domain: <strong>{{ academic.domain }}</strong></p>
+        <p class="small mb-0">Backlogs: <span class="chip {{ 'chip--good' if academic.backlogs == 0 else 'chip--gap' }}">{{ academic.backlogs }}</span></p>
+        {% else %}
+        <p class="small mb-2">No academic details yet.</p>
+        <a href="{{ url_for('academic') }}" class="btn-wp btn-wp--secondary">Add now</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-clipboard-check" style="color:var(--brass)"></i> Assessment</h2></div>
+      <div class="panel-body">
+        {% if quiz %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1"><span>Aptitude</span><strong class="font-mono">{{ quiz.aptitude_score }}%</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ quiz.aptitude_score }}%"></div></div>
+        </div>
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1"><span>Technical</span><strong class="font-mono">{{ quiz.technical_score }}%</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ quiz.technical_score }}%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small mb-1"><span>Communication</span><strong class="font-mono">{{ quiz.communication_score }}%</strong></div>
+          <div class="progress"><div class="progress-bar" style="width:{{ quiz.communication_score }}%"></div></div>
+        </div>
+        <div class="d-flex justify-content-between small fw-bold"><span>Overall</span><span class="font-mono">{{ quiz.total_score|round(1) }}%</span></div>
+        {% else %}
+        <p class="small mb-2">No assessment yet.</p>
+        <a href="{{ url_for('quiz_setup') }}" class="btn-wp btn-wp--secondary">Take assessment</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-file-lines" style="color:var(--signal-good)"></i> Resume</h2></div>
+      <div class="panel-body">
+        {% if session.get('resume_score') %}
+        <div class="readout mb-2">
+          <span class="readout-label">ATS score</span>
+          <span class="readout-value lg">{{ session.get('resume_score') }}<span class="unit">/100</span></span>
+        </div>
+        <a href="{{ url_for('resume') }}" class="btn-wp btn-wp--secondary">View resume intelligence</a>
+        {% else %}
+        <p class="small mb-2">Your resume is missing. Upload it to unlock ATS scoring and role matching.</p>
+        <a href="{{ url_for('resume') }}" class="btn-wp btn-wp--secondary">Upload resume</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QUICK ACTIONS ===== -->
+<div class="panel">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-bolt" style="color:var(--brass)"></i> Quick actions</h2></div>
+  <div class="panel-body">
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <a href="{{ url_for('academic') }}" class="btn-wp btn-wp--secondary btn-wp--block" style="flex-direction:column;padding:18px 12px">
+          <i class="fas fa-book-open fs-5"></i><span class="small">Academic details</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-3">
+        <a href="{{ url_for('quiz_setup') }}" class="btn-wp btn-wp--secondary btn-wp--block" style="flex-direction:column;padding:18px 12px">
+          <i class="fas fa-clipboard-check fs-5"></i><span class="small">Skill assessment</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-3">
+        <a href="{{ url_for('resume') }}" class="btn-wp btn-wp--secondary btn-wp--block" style="flex-direction:column;padding:18px 12px">
+          <i class="fas fa-file-arrow-up fs-5"></i><span class="small">Upload resume</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-3">
+        <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary btn-wp--block" style="flex-direction:column;padding:18px 12px">
+          <i class="fas fa-gauge-high fs-5"></i><span class="small">Get readiness estimate</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

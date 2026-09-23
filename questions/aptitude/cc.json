@@ -1,0 +1,130 @@
+{
+  "aptitude_questions": [
+    {
+      "id": 1,
+      "question": "If A can complete a task in 12 days and B in 16 days, how long will they take together?",
+      "options": ["6 days", "7 days", "8 days", "9 days"],
+      "answer": "8 days"
+    },
+    {
+      "id": 2,
+      "question": "A can do a work in 10 days. He works for 4 days and leaves. B finishes the remaining work in 6 days. How long would B take alone?",
+      "options": ["9 days", "10 days", "12 days", "15 days"],
+      "answer": "12 days"
+    },
+    {
+      "id": 3,
+      "question": "A, B, and C can do a job in 6, 8, and 12 days respectively. They work together for 2 days. Remaining work is done by A and B. In how many days?",
+      "options": ["1", "2", "3", "4"],
+      "answer": "2"
+    },
+    {
+      "id": 4,
+      "question": "A is twice as efficient as B. They complete a work together in 12 days. How long would B alone take?",
+      "options": ["24 days", "30 days", "36 days", "40 days"],
+      "answer": "24 days"
+    },
+    {
+      "id": 5,
+      "question": "A and B can do a work in 15 days and 20 days respectively. They work on alternate days, starting with A. How long will the work last?",
+      "options": ["9 days", "16 days", "17 days", "19 days"],
+      "answer": "17 days"
+    },
+    {
+      "id": 6,
+      "question": "A alone can do a work in 20 days. B alone can do it in 30 days. If they start together, after 4 days, how much work is left?",
+      "options": ["1/3", "7/15", "1/5", "2/5"],
+      "answer": "7/15"
+    },
+    {
+      "id": 7,
+      "question": "5 men can complete a work in 12 days. How long will 8 men take?",
+      "options": ["6 days", "7.5 days", "8 days", "9 days"],
+      "answer": "7.5 days"
+    },
+    {
+      "id": 8,
+      "question": "A works on a job for 6 days and completes 2/5 of it. In how many days can he finish the whole job?",
+      "options": ["12 days", "15 days", "18 days", "20 days"],
+      "answer": "15 days"
+    },
+    {
+      "id": 9,
+      "question": "Two taps can fill a tank in 12 and 16 hours. A leak empties it in 24 hours. Tank is full. How long to fill the tank with taps open?",
+      "options": ["6 hours", "8 hours", "9 hours", "10 hours"],
+      "answer": "8 hours"
+    },
+    {
+      "id": 10,
+      "question": "A can do 1/3 of work in 5 days. B can do the remaining work in 8 days. How long would they take together?",
+      "options": ["8 days", "9 days", "10 days", "11 days"],
+      "answer": "10 days"
+    },
+    {
+      "id": 11,
+      "question": "A train runs 240 km in 4 hours. Speed?",
+      "options": ["50 km/hr", "55 km/hr", "60 km/hr", "65 km/hr"],
+      "answer": "60 km/hr"
+    },
+    {
+      "id": 12,
+      "question": "A can cover 180 km in 3 hours. B can cover 240 km in 4 hours. Who is faster?",
+      "options": ["A", "B", "Same", "Cannot determine"],
+      "answer": "Same"
+    },
+    {
+      "id": 13,
+      "question": "Two trains of length 100m and 150m cross each other in 10 sec. Find the sum of lengths?",
+      "options": ["100 m", "150 m", "250 m", "300 m"],
+      "answer": "250 m"
+    },
+    {
+      "id": 14,
+      "question": "A car moves at 60 km/hr for 2 hours, then 80 km/hr for 3 hours. Avg speed?",
+      "options": ["70 km/hr", "72 km/hr", "75 km/hr", "76 km/hr"],
+      "answer": "72 km/hr"
+    },
+    {
+      "id": 15,
+      "question": "A train takes 2 hours less than a car to cover same distance 240 km. Train speed 80 km/hr. Car speed?",
+      "options": ["60 km/hr", "65 km/hr", "70 km/hr", "75 km/hr"],
+      "answer": "60 km/hr"
+    },
+    {
+      "id": 16,
+      "question": "Find next in series: 2, 6, 12, 20, 30, ?",
+      "options": ["40", "42", "45", "50"],
+      "answer": "42"
+    },
+    {
+      "id": 17,
+      "question": "If all Bloops are Razzies and all Razzies are Lazzies, are all Bloops definitely Lazzies?",
+      "options": ["Yes", "No", "Cannot say", "Sometimes"],
+      "answer": "Yes"
+    },
+    {
+      "id": 18,
+      "question": "If today is Tuesday, what day will it be 45 days later?",
+      "options": ["Sunday", "Monday", "Tuesday", "Wednesday"],
+      "answer": "Tuesday"
+    },
+    {
+      "id": 19,
+      "question": "Average marks of students (78, 65, 82, 56, 90)?",
+      "options": ["74", "75", "74.2", "74.1"],
+      "answer": "74.2"
+    },
+    {
+      "id": 20,
+      "question": "Highest marks?",
+      "options": ["A", "B", "C", "D"],
+      "answer": "D"
+    },
+    {
+      "id": 21,
+      "question": "Units for B if total = 200 and B = 35%?",
+      "options": ["60", "70", "80", "75"],
+      "answer": "70"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="panel">
+      <div class="panel-body empty-state">
+        <div class="readout-value lg" style="color:var(--brass-deep)">{{ code }}</div>
+        <h3 class="mt-2">{{ message }}</h3>
+        <p>
+          {% if code == 404 %}
+            Check the URL, or head back to somewhere familiar.
+          {% else %}
+            Nothing you did caused this — please try again in a moment.
+          {% endif %}
+        </p>
+        <a href="{{ url_for('dashboard') if session.get('user_id') else url_for('login') }}" class="btn-wp btn-wp--primary">
+          <i class="fas fa-house"></i> Back to safety
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

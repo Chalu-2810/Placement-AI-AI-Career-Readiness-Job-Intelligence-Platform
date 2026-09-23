@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Job Market Intelligence — PlacementAI{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <span class="panel-eyebrow">Job market intelligence</span>
+    <h1 style="font-size:1.5rem;margin:2px 0 4px">{{ domain_name }}</h1>
+    {% if snapshot_fetched_at %}
+      <p class="small mb-0"><i class="fas fa-clock me-1"></i>Market snapshot as of
+        <strong class="font-mono">{{ snapshot_fetched_at }}</strong> — cached, not live.</p>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('dashboard') }}" class="btn-wp btn-wp--secondary"><i class="fas fa-house"></i> Overview</a>
+</div>
+
+{% if not snapshot %}
+<!-- EMPTY STATE: no snapshot has ever been refreshed for this domain -->
+<div class="panel">
+  <div class="panel-body empty-state">
+    <i class="fas fa-satellite-dish icon"></i>
+    <h3>No market snapshot yet for {{ domain_name }}</h3>
+    <p>
+      Job market data for this domain hasn't been collected yet. Snapshots are refreshed on a
+      schedule from real job postings — check back after the next refresh, or explore your
+      existing skill gap and roadmap in the meantime.
+    </p>
+    <a href="{{ url_for('predict') }}" class="btn-wp btn-wp--primary">View readiness estimate</a>
+  </div>
+</div>
+
+{% else %}
+
+<!-- HERO: snapshot summary -->
+<div class="panel panel-casing panel-raised mb-4">
+  <div class="panel-body" style="padding:28px 24px">
+    <div class="row align-items-center g-4">
+      <div class="col-md-6">
+        <span class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Your target domain</span>
+        <h2 style="color:var(--casing-ink);font-size:1.3rem;margin:2px 0 8px">{{ domain_name }}</h2>
+        <div class="readout">
+          <span class="readout-label" style="color:rgba(231,236,234,0.6)">Postings analyzed</span>
+          <span class="readout-value lg" style="color:var(--casing-ink)">{{ snapshot.posting_count }}</span>
+        </div>
+        <p class="small mt-2 mb-0" style="color:rgba(231,236,234,0.6)">
+          Source: {{ snapshot.source }} · real external postings, not simulated data.
+        </p>
+      </div>
+      <div class="col-md-6">
+        {% if match and match.has_student_skills %}
+        <span class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Your market match</span>
+        <div class="readout-value lg" style="color:var(--casing-ink)">{{ match.match_percentage }}<span class="unit">%</span></div>
+        <p class="small mb-0" style="color:rgba(231,236,234,0.6)">
+          {{ match.matched_count }} of the top {{ match.considered_count }} most-mentioned skills in this
+          snapshot are already in your profile.
+        </p>
+        {% else %}
+        <span class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Your market match</span>
+        <p class="small mb-2" style="color:rgba(231,236,234,0.75)">
+          We don't have your skills yet — upload your resume to see how your profile compares
+          against this snapshot.
+        </p>
+        <a href="{{ url_for('resume') }}" class="btn-wp btn-wp--on-dark">Upload resume</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- MARKET SKILLS -->
+  <div class="col-md-7">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-layer-group" style="color:var(--chart-teal)"></i> Market skills</h2>
+        <span class="panel-eyebrow">Top {{ match.considered_count if match else (snapshot.skill_frequencies|length) }} by mentions</span>
+      </div>
+      <div class="panel-body">
+        {% set rows = match.ranked if match else snapshot.skill_frequencies[:15] %}
+        {% if rows %}
+        {% set max_count = rows[0].count %}
+        {% for row in rows %}
+        <div class="skill-row {{ 'strong' if row.has_skill else '' }}">
+          <span class="skill-name">{{ row.skill|capitalize }}</span>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="width:{{ (row.count / max_count * 100)|round(1) }}%"></div></div>
+          <span class="chip {{ 'chip--good' if row.demand_label == 'High demand' else ('chip--brass' if row.demand_label == 'Medium demand' else 'chip--teal') }}">{{ row.demand_label }}</span>
+          {% if match %}
+            {% if row.has_skill %}<span class="chip chip--good">✓ You have it</span>{% else %}<span class="chip chip--gap">✕ Gap</span>{% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}
+        <p class="small mt-3 mb-0">
+          Demand labels are relative to the most-mentioned skill in this snapshot (High ≥66%, Medium ≥33% of
+          that top skill's mention count) — not an absolute market-wide claim.
+        </p>
+        {% else %}
+        <p class="small mb-0">No skills could be extracted from this snapshot's postings.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIORITY SKILLS + ROLES -->
+  <div class="col-md-5">
+    <div class="panel mb-4">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-star" style="color:var(--brass)"></i> Priority skills</h2></div>
+      <div class="panel-body">
+        {% if match and match.has_student_skills and match.priority_skills %}
+        <ol class="ps-3 mb-0" style="font-size:0.9rem">
+          {% for p in match.priority_skills %}<li class="mb-2">{{ p.skill|capitalize }} <span class="small">({{ p.count }} mentions, {{ p.demand_label|lower }})</span></li>{% endfor %}
+        </ol>
+        {% elif match and match.has_student_skills %}
+        <p class="small mb-0">You already cover all of the top identified market skills for this domain. 🎉</p>
+        {% else %}
+        <p class="small mb-0">Upload your resume to get a personalized priority list — otherwise this would just be a copy of the market skills list above.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-briefcase" style="color:var(--signal-good)"></i> Best career matches</h2></div>
+      <div class="panel-body">
+        {% if role_recommendations %}
+        <div class="d-flex flex-column gap-3">
+          {% for rec in role_recommendations %}
+          <div class="p-2" style="border:1px solid var(--line);border-radius:var(--r-control)">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-semibold small">{{ loop.index }}. {{ rec.role }}</span>
+              {% if rec.match.match_percentage is not none %}
+                <span class="chip {{ 'chip--good' if rec.match.match_percentage >= 60 else ('chip--brass' if rec.match.match_percentage >= 30 else 'chip--gap') }}">{{ rec.match.match_percentage }}% match</span>
+              {% else %}
+                <span class="chip">{{ rec.posting_count }} posting{{ 's' if rec.posting_count != 1 }}</span>
+              {% endif %}
+            </div>
+            {% if rec.match.ranked %}
+            <div class="d-flex flex-wrap gap-1 mt-1">
+              {% for s in (rec.match.ranked | selectattr('has_skill') | list)[:4] %}<span class="chip chip--good" style="font-size:0.65rem">✓ {{ s.skill|capitalize }}</span>{% endfor %}
+              {% for s in rec.match.priority_skills[:3] %}<span class="chip chip--gap" style="font-size:0.65rem">⚠ {{ s.skill|capitalize }}</span>{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% if not match or not match.has_student_skills %}
+        <p class="small mt-3 mb-0">
+          <a href="{{ url_for('resume') }}">Upload your resume</a> to rank these by your actual skill match —
+          currently ordered by posting volume.
+        </p>
+        {% endif %}
+        {% else %}
+        <p class="small mb-0">No distinct role titles found in this snapshot.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATIONS -->
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-map-pin" style="color:var(--chart-teal)"></i> Market locations</h2></div>
+  <div class="panel-body">
+    {% if snapshot.locations %}
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      {% for loc in snapshot.locations %}<span class="chip chip--teal">{{ loc.location }} ({{ loc.count }})</span>{% endfor %}
+    </div>
+    {% else %}
+    <p class="small mb-2">No location data was available in this snapshot's postings.</p>
+    {% endif %}
+    <p class="small mb-0" style="color:var(--ink-soft)">{{ snapshot.note }}</p>
+  </div>
+</div>
+
+<!-- SALARY -->
+<div class="panel mb-4">
+  <div class="panel-header"><h2 class="panel-title" style="font-size:1rem"><i class="fas fa-sack-dollar" style="color:var(--brass)"></i> Salary</h2></div>
+  <div class="panel-body">
+    {% if snapshot.salary.available %}
+    <div class="row g-3 text-center">
+      <div class="col-4"><div class="readout"><span class="readout-label">Min</span><span class="readout-value">{{ snapshot.salary.min|round|int }}</span></div></div>
+      <div class="col-4"><div class="readout"><span class="readout-label">Median</span><span class="readout-value">{{ snapshot.salary.median|round|int }}</span></div></div>
+      <div class="col-4"><div class="readout"><span class="readout-label">Max</span><span class="readout-value">{{ snapshot.salary.max|round|int }}</span></div></div>
+    </div>
+    <p class="small mt-3 mb-0">Based on {{ snapshot.salary.sample_size }} postings that disclosed salary figures. Currency/period as reported by the source — treat as directional, not precise.</p>
+    {% else %}
+    <p class="small mb-0">
+      Not enough postings in this snapshot disclosed salary figures ({{ snapshot.salary.sample_size }} found) to
+      show a reliable range. We don't estimate or fabricate salary data.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- AM I QUALIFIED? cross-link -->
+<div class="panel panel-casing mb-4">
+  <div class="panel-body d-flex justify-content-between align-items-center flex-wrap gap-3" style="padding:20px 24px">
+    <div>
+      <span class="panel-eyebrow" style="color:rgba(231,236,234,0.6)">Interactive</span>
+      <h2 class="panel-title" style="font-size:1rem;color:var(--casing-ink)">Am I qualified for a specific role?</h2>
+      <p class="small mb-0" style="color:rgba(231,236,234,0.7)">Pick a role and toggle your skills to see a live match, backed by real postings.</p>
+    </div>
+    <a href="{{ url_for('qualified') }}" class="btn-wp btn-wp--on-dark">Check now <i class="fas fa-arrow-right"></i></a>
+  </div>
+</div>
+
+<p class="small text-center" style="color:var(--ink-soft)">
+  This page shows real external job-market data, separate from your model-based placement readiness estimate.
+  See <code>docs/job-market-methodology.md</code> for the full methodology.
+</p>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Assessment Setup — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-clipboard-list" style="color:var(--brass)"></i> Skill assessment</h2>
+        <span class="panel-eyebrow">Select your domain</span>
+      </div>
+      <div class="panel-body">
+
+        {% if academic %}
+        <div class="flash flash-info mb-4" style="display:flex">
+          <span>Your saved domain: <strong>{{ academic.domain }}</strong></span>
+        </div>
+        {% endif %}
+
+        <label class="field-label" for="domainSelect">Choose domain for your quiz</label>
+        <select id="domainSelect" class="form-select mb-3">
+          <option value="">— Select domain —</option>
+          {% for d in domains %}
+          <option value="{{ d.id }}" {% if academic and academic.preferred_domain_id == d.id %}selected{% endif %}>
+            {{ d.domain_name }}
+          </option>
+          {% endfor %}
+        </select>
+
+        <button id="generateBtn" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg" disabled>
+          <i class="fas fa-wand-magic-sparkles"></i> Generate my quiz
+        </button>
+
+        <div id="statusMsg" class="mt-3 text-center d-none">
+          <div class="spinner-border spinner-border-sm" style="color:var(--brass)"></div>
+          <span class="small ms-2">Generating questions…</span>
+        </div>
+
+        <hr class="my-4" style="border-color:var(--line)"/>
+        <div class="row text-center g-2">
+          <div class="col-4">
+            <div class="p-3" style="background:var(--paper);border-radius:var(--r-control)">
+              <div style="color:var(--chart-teal)"><i class="fas fa-brain"></i></div>
+              <small class="fw-semibold">10 Aptitude</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-3" style="background:var(--paper);border-radius:var(--r-control)">
+              <div style="color:var(--signal-good)"><i class="fas fa-code"></i></div>
+              <small class="fw-semibold">10 Technical</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-3" style="background:var(--paper);border-radius:var(--r-control)">
+              <div style="color:var(--brass)"><i class="fas fa-comments"></i></div>
+              <small class="fw-semibold">10 Communication</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const sel = document.getElementById('domainSelect');
+  const btn = document.getElementById('generateBtn');
+  const msg = document.getElementById('statusMsg');
+
+  sel.addEventListener('change', () => { btn.disabled = !sel.value; });
+  if (sel.value) btn.disabled = false;
+
+  btn.addEventListener('click', async () => {
+    const domain = sel.value;
+    if (!domain) return;
+
+    btn.disabled = true;
+    msg.classList.remove('d-none');
+
+    try {
+      const res  = await fetch('/generate_quiz', {
+        method : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body   : JSON.stringify({ domain })
+      });
+      const data = await res.json();
+
+      if (data.status === 'ok') {
+        window.location.href = '/quiz';
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+        btn.disabled = false;
+        msg.classList.add('d-none');
+      }
+    } catch (e) {
+      alert('Network error. Please try again.');
+      btn.disabled = false;
+      msg.classList.add('d-none');
+    }
+  });
+</script>
+{% endblock %}

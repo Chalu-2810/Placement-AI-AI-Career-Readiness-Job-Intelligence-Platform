@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Create account — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:1rem"><i class="fas fa-user-plus" style="color:var(--chart-teal)"></i> Create your account</h2>
+        <span class="panel-eyebrow">Get your career readiness estimate</span>
+      </div>
+      <div class="panel-body">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="field-label">Full name</label>
+              <input type="text" name="full_name" class="form-control" placeholder="e.g. Arjun Kumar"
+                     value="{{ data.full_name if data else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Email address</label>
+              <input type="email" name="email" class="form-control" placeholder="you@college.edu"
+                     value="{{ data.email if data else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Register / roll no.</label>
+              <input type="text" name="register_no" class="form-control" placeholder="21CS001"
+                     value="{{ data.register_no if data else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Department</label>
+              <input type="text" name="department" class="form-control" placeholder="Computer Science"
+                     value="{{ data.department if data else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Batch year</label>
+              <input type="number" name="batch_year" class="form-control" placeholder="2025"
+                     min="2020" max="2030" value="{{ data.batch_year if data else '2025' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">Confirm password</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required/>
+            </div>
+          </div>
+          <button type="submit" class="btn-wp btn-wp--primary btn-wp--block btn-wp--lg mt-4">
+            <i class="fas fa-user-plus"></i> Create account
+          </button>
+        </form>
+        <p class="text-center small mt-4 mb-0">
+          Already have an account? <a href="{{ url_for('login') }}" style="font-weight:600">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

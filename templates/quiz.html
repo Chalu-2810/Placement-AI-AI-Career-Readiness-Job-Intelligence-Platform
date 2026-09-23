@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Skill Assessment — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-9">
+
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <span class="panel-eyebrow">Skill assessment</span>
+      <h1 style="font-size:1.4rem;margin:2px 0">30 questions — aptitude, technical, communication</h1>
+    </div>
+    <div id="timerBadge" class="chip chip--brass" style="font-size:1rem;padding:8px 16px">
+      <i class="fas fa-clock"></i><span id="timerDisplay" class="font-mono">30:00</span>
+    </div>
+  </div>
+
+  <!-- Section tabs -->
+  <ul class="nav mb-4" id="quizTabs" style="border-bottom:1px solid var(--line);gap:4px">
+    <li class="nav-item">
+      <a class="nav-link active" href="#sec-aptitude" onclick="showSection('aptitude', this)">
+        <i class="fas fa-brain"></i> Aptitude <span class="chip ms-1">10</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#sec-technical" onclick="showSection('technical', this)">
+        <i class="fas fa-code"></i> Technical <span class="chip ms-1">10</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#sec-communication" onclick="showSection('communication', this)">
+        <i class="fas fa-comments"></i> Communication <span class="chip ms-1">10</span>
+      </a>
+    </li>
+  </ul>
+
+  <form method="POST" action="{{ url_for('submit_quiz') }}" id="quizForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <!-- APTITUDE -->
+    <div id="sec-aptitude" class="quiz-section">
+      {% for q in quiz.aptitude %}
+      <div class="panel mb-3">
+        <div class="panel-body">
+          <p class="fw-semibold mb-3"><span class="chip chip--teal me-2">A{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2">
+                <input type="radio" name="aptitude_{{ q.id }}" value="{{ opt }}" class="form-check-input" required>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="text-end">
+        <button type="button" class="btn-wp btn-wp--primary" onclick="showSection('technical', document.querySelectorAll('#quizTabs .nav-link')[1])">Next: Technical →</button>
+      </div>
+    </div>
+
+    <!-- TECHNICAL -->
+    <div id="sec-technical" class="quiz-section d-none">
+      {% for q in quiz.technical %}
+      <div class="panel mb-3">
+        <div class="panel-body">
+          <p class="fw-semibold mb-3"><span class="chip chip--good me-2">T{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2">
+                <input type="radio" name="technical_{{ q.id }}" value="{{ opt }}" class="form-check-input mt-0" required/>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn-wp btn-wp--secondary" onclick="showSection('aptitude', document.querySelectorAll('#quizTabs .nav-link')[0])">← Back</button>
+        <button type="button" class="btn-wp btn-wp--primary" onclick="showSection('communication', document.querySelectorAll('#quizTabs .nav-link')[2])">Next: Communication →</button>
+      </div>
+    </div>
+
+    <!-- COMMUNICATION -->
+    <div id="sec-communication" class="quiz-section d-none">
+      {% for q in quiz.communication %}
+      <div class="panel mb-3">
+        <div class="panel-body">
+          <p class="fw-semibold mb-3"><span class="chip chip--brass me-2">C{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2">
+                <input type="radio" name="communication_{{ q.id }}" value="{{ opt }}" class="form-check-input" required>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between mt-3">
+        <button type="button" class="btn-wp btn-wp--secondary" onclick="showSection('technical', document.querySelectorAll('#quizTabs .nav-link')[1])">← Back</button>
+        <button type="submit" class="btn-wp btn-wp--primary btn-wp--lg">
+          <i class="fas fa-paper-plane"></i> Submit assessment
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  #quizTabs .nav-link { color: var(--ink-soft); font-size: 0.85rem; font-weight: 600; padding: 10px 16px; border-bottom: 2px solid transparent; cursor: pointer; }
+  #quizTabs .nav-link.active { color: var(--brass-deep); border-bottom-color: var(--brass); }
+</style>
+<script>
+  function showSection(name, link) {
+    document.querySelectorAll('.quiz-section').forEach(s => s.classList.add('d-none'));
+    document.getElementById('sec-' + name).classList.remove('d-none');
+    document.querySelectorAll('#quizTabs .nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    return false;
+  }
+
+  document.addEventListener('change', e => {
+    if (e.target.type === 'radio') {
+      const questionBox = e.target.closest('.panel');
+      const siblings = questionBox.querySelectorAll(`input[name="${e.target.name}"]`);
+      siblings.forEach(r => { const lbl = r.closest('label'); if (lbl) lbl.classList.remove('selected'); });
+      const selectedLabel = e.target.closest('label');
+      if (selectedLabel) selectedLabel.classList.add('selected');
+    }
+  });
+
+  // Countdown timer — 30 minutes
+  let seconds = 30 * 60;
+  const display = document.getElementById('timerDisplay');
+  const badge   = document.getElementById('timerBadge');
+  const interval = setInterval(() => {
+    seconds--;
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    display.textContent = `${m}:${s}`;
+    if (seconds <= 300) badge.classList.add('chip--gap');
+    if (seconds <= 0) {
+      clearInterval(interval);
+      document.getElementById('quizForm').submit();
+    }
+  }, 1000);
+</script>
+{% endblock %}
