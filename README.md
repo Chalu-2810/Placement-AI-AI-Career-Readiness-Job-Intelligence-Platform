@@ -569,3 +569,5 @@ B.E. / B.Tech — Computer Science Engineering
 > **From placement prediction to continuous career guidance.**
 
 PlacementAI aims to help students understand where they currently stand, identify what they need to improve, discover relevant opportunities, and follow a structured path toward their target career.
+#   P l a c e m e n t - A I - A I - C a r e e r - R e a d i n e s s - J o b - I n t e l l i g e n c e - P l a t f o r m  
+ 
