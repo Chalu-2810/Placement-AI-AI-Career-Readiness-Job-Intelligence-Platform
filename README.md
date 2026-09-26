@@ -4,6 +4,8 @@ PlacementAI is an **AI-powered career and placement platform** designed to help 
 
 The platform combines **Machine Learning, Generative AI, Resume/ATS Analysis, Skill Gap Analysis, Job Market Intelligence, and Career Roadmaps** into one integrated system.
 
+LIVE DEMO: https://placement-ai-9cvb.onrender.com/login
+
 ---
 
 ## 🚀 Key Features
